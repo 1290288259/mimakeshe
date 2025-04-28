@@ -116,5 +116,63 @@ class Shuju(db.Model):
     def __repr__(self):
         """返回数据对象的字符串表示"""
         return f'<Shuju id={self.id}>'
+
+
+class Shuju2(db.Model):
+    """
+    加密数据模型类，对应数据库中的shuju2表
+
+    属性:
+        id: 主键，int类型
+        cirrhosis: 肝硬化，text类型
+        age: 年龄，text类型
+        sex: 性别，text类型
+        cholesterol: 胆固醇，text类型
+        triglyceride: 甘油三酯，text类型
+        HDL: 高密度脂蛋白，text类型
+        LDL: 低密度脂蛋白，text类型
+        PathDiagNum: 病理诊断编号，text类型
+        BMI: 体重指数，text类型
+        ALT: 谷丙转氨酶，text类型
+        AST: 谷草转氨酶，text类型
+        glucose: 血糖，text类型
+    """
+    __tablename__ = 'shuju2'
+
+    id = db.Column(db.Integer, primary_key=True)
+    cirrhosis = db.Column(db.Text, nullable=False)
+    age = db.Column(db.Text, nullable=False)
+    sex = db.Column(db.Text, nullable=False)
+    cholesterol = db.Column(db.Text, nullable=False)
+    triglyceride = db.Column(db.Text, nullable=False)
+    HDL = db.Column(db.Text, nullable=False)
+    LDL = db.Column(db.Text, nullable=False)
+    PathDiagNum = db.Column(db.Text, nullable=False)
+    BMI = db.Column(db.Text, nullable=False)
+    ALT = db.Column(db.Text, nullable=False)
+    AST = db.Column(db.Text, nullable=False)
+    glucose = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        """返回加密数据对象的字符串表示"""
+        return f'<Shuju2 id={self.id}>'
+
+
+class UserData(db.Model):
+    """
+    用户数据模型类，对应数据库中的user_data表
+
+    属性:
+        user_id: 用户ID，主键
+        data_id: 数据ID，主键
+    """
+    __tablename__ = 'user_data'
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
+    data_id = db.Column(db.Integer, primary_key=True)
+
+    def __repr__(self):
+        """返回用户数据对象的字符串表示"""
+        return f'<UserData user_id={self.user_id}, data_id={self.data_id}>'
     
     

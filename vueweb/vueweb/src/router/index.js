@@ -9,8 +9,10 @@ import huowuPage from '@/views/huowuPage.vue';
 import goumaiPage from '@/views/goumaiPage.vue';
 import cartPage from "@/views/cartPage.vue";
 import fahuoPage from "@/views/fahuoPage.vue";
-import dingdanPage from "@/views/dingdanPage.vue";
 import dataupPage from "@/views/dataupPage.vue";
+import MyDataPage from '@/views/MyDataPage.vue';
+import DataglPage from '@/views/DataglPage.vue';
+import DataStPage from '@/views/DataStPage.vue';
 const routes = [
     {
         path: '/index',
@@ -53,15 +55,26 @@ const routes = [
                 component: fahuoPage,  // 对应的组件
             },
             {
-                path: 'dingdan',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'dingdan',
-                component: dingdanPage,  // 对应的组件
+                path: 'mydata',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
+                name: 'mydata',
+                component: MyDataPage,  // 对应的组件
             },
             {
                 path: 'dataup',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
                 name: 'dataup',
                 component: dataupPage,  // 对应的组件
             },
+            {
+                path: 'datagl',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
+                name: 'datagl',
+                component: DataglPage,  // 对应的组件
+            },
+            {
+                path: 'datast',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
+                name: 'datast',
+                component: DataStPage,  // 对应的组件
+            },
+
 
 
 

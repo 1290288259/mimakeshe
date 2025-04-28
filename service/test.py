@@ -11,8 +11,10 @@ engine = db.engine
 # 读取shuju表的所有内容
 df = pd.read_sql('shuju', con=engine)
 
-# 加密数据
-df['cirrhosis_encrypted'] = df['cirrhosis'].apply(lambda x: str(encryptor.encrypt(x).ciphertext()))
+# 加密所有列（除了id列）
+for col in df.columns:
+    if col != 'id':  # 跳过id列
+        df[f'{col}_encrypted'] = df[col].apply(lambda x: str(encryptor.encrypt(x).ciphertext()))
 
 # 将加密后的数据存入shuju2表
 df.to_sql('shuju2', con=engine, if_exists='replace', index=False)
