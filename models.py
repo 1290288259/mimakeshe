@@ -1,4 +1,5 @@
 from db_config import db
+from datetime import datetime
 
 class User(db.Model):
     """
@@ -139,7 +140,7 @@ class Shuju2(db.Model):
     """
     __tablename__ = 'shuju2'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(11), primary_key=True)  # 将整数类型改为字符串类型，长度为50
     cirrhosis = db.Column(db.Text, nullable=False)
     age = db.Column(db.Text, nullable=False)
     sex = db.Column(db.Text, nullable=False)
@@ -174,5 +175,82 @@ class UserData(db.Model):
     def __repr__(self):
         """返回用户数据对象的字符串表示"""
         return f'<UserData user_id={self.user_id}, data_id={self.data_id}>'
+
+
+class Avg(db.Model):
+    """
+    平均值模型类，对应数据库中的avg表
+    属性:
+        id: 主键，自增
+        age: 年龄字段平均值
+        cholesterol: 胆固醇字段平均值
+        triglyceride: 甘油三酯字段平均值
+        HDL: 高密度脂蛋白字段平均值
+        LDL: 低密度脂蛋白字段平均值
+        BMI: 体重指数字段平均值
+        ALT: 谷丙转氨酶字段平均值
+        AST: 谷草转氨酶字段平均值
+        glucose: 血糖字段平均值
+        created_at: 存入时间，自动记录
+    """
+    __tablename__ = 'avg'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主键，自增
+    age = db.Column(db.Float)            # 年龄字段平均值
+    cholesterol = db.Column(db.Float)    # 胆固醇字段平均值
+    triglyceride = db.Column(db.Float)   # 甘油三酯字段平均值
+    HDL = db.Column(db.Float)            # 高密度脂蛋白字段平均值
+    LDL = db.Column(db.Float)            # 低密度脂蛋白字段平均值
+    BMI = db.Column(db.Float)            # 体重指数字段平均值
+    ALT = db.Column(db.Float)            # 谷丙转氨酶字段平均值
+    AST = db.Column(db.Float)            # 谷草转氨酶字段平均值
+    glucose = db.Column(db.Float)        # 血糖字段平均值
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # 存入时间，自动记录
+
+    def __repr__(self):
+        """返回平均值对象的字符串表示"""
+        return f'<Avg id={self.id} created_at={self.created_at}>'
+
+
+class Analysis_result(db.Model):
+    """
+    分析结果模型类，对应数据库中的analysis_result表
+
+    属性:
+        id: 主键，自增
+        cirrhosis: 肝硬化，浮点型
+        age: 年龄，浮点型
+        sex: 性别，浮点型
+        cholesterol: 胆固醇，浮点型
+        triglyceride: 甘油三酯，浮点型
+        HDL: 高密度脂蛋白，浮点型
+        LDL: 低密度脂蛋白，浮点型
+        PathDiagNum: 病理诊断编号，浮点型
+        BMI: 体重指数，浮点型
+        ALT: 谷丙转氨酶，浮点型
+        AST: 谷草转氨酶，浮点型
+        glucose: 血糖，浮点型
+        created_at: 创建时间，自动记录当前时间
+    """
+    __tablename__ = 'analysis_result'  # 指定表名
+    
+    id = db.Column(db.Integer, primary_key=True)  # 主键
+    cirrhosis = db.Column(db.Float)      # 肝硬化，浮点型
+    age = db.Column(db.Float)            # 年龄，浮点型
+    sex = db.Column(db.Float)            # 性别，浮点型
+    cholesterol = db.Column(db.Float)    # 胆固醇，浮点型
+    triglyceride = db.Column(db.Float)   # 甘油三酯，浮点型
+    HDL = db.Column(db.Float)            # 高密度脂蛋白，浮点型
+    LDL = db.Column(db.Float)            # 低密度脂蛋白，浮点型
+    PathDiagNum = db.Column(db.Float)    # 病理诊断编号，浮点型
+    BMI = db.Column(db.Float)            # 体重指数，浮点型
+    ALT = db.Column(db.Float)            # 谷丙转氨酶，浮点型
+    AST = db.Column(db.Float)            # 谷草转氨酶，浮点型
+    glucose = db.Column(db.Float)        # 血糖，浮点型
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间，自动记录当前时间
+    
+    def __repr__(self):
+        """返回分析结果对象的字符串表示"""
+        return f'<Analysis_result id={self.id}>'
     
     

@@ -14,6 +14,18 @@
       <el-table-column prop="ALT" label="谷丙转氨酶" width="120" />
       <el-table-column prop="AST" label="谷草转氨酶" width="120" />
       <el-table-column prop="glucose" label="血糖" width="100" />
+      <el-table-column label="操作" width="120">
+        <template #default="scope">
+          <el-button 
+            type="primary" 
+            size="small" 
+            @click="analyzeData(scope.row.id)"
+            :loading="loadingId === scope.row.id"
+          >
+            分析
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>
@@ -26,7 +38,8 @@ export default {
   data() {
     return {
       tableData: [], // 存储用户数据
-      userId: '' // 用户ID
+      userId: '', // 用户ID
+      loadingId: null // 当前正在分析的数据ID
     };
   },
   created() {
@@ -50,6 +63,28 @@ export default {
         }
       } catch (error) {
         ElMessage.error('数据加载失败: ' + error.message);
+      }
+    },
+    
+    // 分析数据方法
+    async analyzeData(dataId) {
+      this.loadingId = dataId; // 设置当前加载的ID
+      
+      try {
+        // 调用隐私求交接口
+        const res = await axios.get('/data/privacy_intersection', {
+          params: { data_id: dataId }
+        });
+        
+        if (res.data.code === 200) {
+          ElMessage.success('数据分析成功');
+        } else {
+          ElMessage.error('数据分析失败: ' + res.data.msg);
+        }
+      } catch (error) {
+        ElMessage.error('数据分析请求失败: ' + error.message);
+      } finally {
+        this.loadingId = null; // 清除加载状态
       }
     }
   }

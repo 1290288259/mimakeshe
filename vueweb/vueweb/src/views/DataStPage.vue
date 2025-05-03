@@ -1,67 +1,43 @@
 <template>
-  <div class="data-container">
-    <h2>数据分析统计</h2>
-    <el-table :data="averagesData" style="width: 100%">
-      <el-table-column prop="field" label="指标" width="180" />
-      <el-table-column prop="value" label="平均值" width="180" />
-    </el-table>
+  <div class="data-st-page">
+    <!-- 引入头部组件 -->
+    <DataStHead />
+    <!-- 主体内容为子路由出口 -->
+    <el-container style="height: 100%; display: flex; flex-direction: column;">
+      <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1;">
+        <router-view></router-view>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
-import { ElMessage } from 'element-plus';
+// 引入头部组件
+import DataStHead from './DataStHead.vue';
 
 export default {
-  data() {
-    return {
-      averagesData: [] // 存储从DataOB.py获取的平均值数据
-    };
-  },
-  created() {
-    this.fetchAverages();
-  },
-  methods: {
-    async fetchAverages() {
-      try {
-        const res = await axios.get('/data/averages');
-        if (res.data.code === 200) {
-          // 转换数据格式以便表格显示
-          this.averagesData = Object.entries(res.data.data).map(([field, value]) => ({
-            field: this.getFieldName(field),
-            value
-          }));
-        } else {
-          ElMessage.error('获取平均值失败: ' + res.data.msg);
-        }
-      } catch (error) {
-        ElMessage.error('获取平均值失败: ' + error.message);
-      }
-    },
-    getFieldName(field) {
-      // 将字段名转换为中文显示
-      const fieldNames = {
-        cirrhosis: '肝硬化',
-        age: '年龄',
-        cholesterol: '胆固醇',
-        triglyceride: '甘油三酯',
-        HDL: '高密度脂蛋白',
-        LDL: '低密度脂蛋白',
-        BMI: '体重指数',
-        ALT: '谷丙转氨酶',
-        AST: '谷草转氨酶',
-        glucose: '血糖'
-      };
-      return fieldNames[field] || field;
-    }
+  name: "DataStPage",
+  components: {
+    DataStHead // 注册头部组件
   }
 };
 </script>
 
 <style scoped>
-.data-container {
+.data-st-page {
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
+}
+.nav-btns {
+  margin-bottom: 20px;
+}
+.nav-link {
+  margin-right: 20px;
+  color: #409EFF;
+  text-decoration: none;
+  font-size: 18px;
+}
+.nav-link.router-link-exact-active {
+  font-weight: bold;
+  text-decoration: underline;
 }
 </style>

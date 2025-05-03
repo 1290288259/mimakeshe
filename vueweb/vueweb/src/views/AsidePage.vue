@@ -40,20 +40,31 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 调整菜单样式 */
+/* 优化菜单样式为更现代的浅蓝渐变主题，并增加圆角和阴影 */
 .menu {
-  background-color: #2c3e50; /* 侧边栏背景色 */
-  color: #fff;
+  background: #fff;           /* 只保留纯白色背景 */
+  color: #1565c0;             /* 深蓝色字体 */
   height: 100%;
+  border-radius: 18px;        /* 圆角 */
+  padding-top: 12px;
+  padding-bottom: 12px;
+  margin: 12px;
+  border: none;               /* 无边框 */
+  box-shadow: none;           /* 无阴影 */
 }
 
 .el-menu-item {
-  color: #ecf0f1;
-  font-size: 14px;
+  color: #1976d2;            /* 普通项字体颜色更柔和 */
+  font-size: 15px;
+  border-radius: 10px;       /* 菜单项圆角 */
+  margin: 4px 8px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .el-menu-item:hover {
-  background-color: #34495e;
+  background-color: #e1f5fe; /* 更亮的浅蓝色悬浮 */
+  color: #0d47a1;
+  box-shadow: 0 2px 8px 0 rgba(33, 150, 243, 0.10); /* 悬浮时有轻微阴影 */
 }
 
 .el-menu-item .el-icon {
@@ -62,20 +73,24 @@ export default defineComponent({
 
 .el-menu-item span {
   vertical-align: middle;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 }
 
 /* 当前选中项的样式 */
 .el-menu-item.is-active {
-  background-color: #1abc9c;
-  color: white;
+  background-color: #90caf9; /* 选中项更深的浅蓝色 */
+  color: #0d47a1;
+  font-weight: bold;
+  box-shadow: 0 2px 12px 0 rgba(33, 150, 243, 0.15);
 }
 
 /* 响应式设计：在较小屏幕下调整菜单宽度 */
 @media (max-width: 768px) {
   .menu {
     width: 200px;
+    margin: 0;
+    border-radius: 0;
   }
 }
 </style>

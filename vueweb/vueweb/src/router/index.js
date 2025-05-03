@@ -13,6 +13,11 @@ import dataupPage from "@/views/dataupPage.vue";
 import MyDataPage from '@/views/MyDataPage.vue';
 import DataglPage from '@/views/DataglPage.vue';
 import DataStPage from '@/views/DataStPage.vue';
+import DataAvgPage from '@/views/DataAvgPage.vue'; // 已经引入
+import AgeDbtPage from '@/views/AgeDbtPage.vue';
+import AgeAvgPage from '@/views/AgeAvgPage.vue';
+import DataAyPage from '@/views/DataAyPage.vue';
+
 const routes = [
     {
         path: '/index',
@@ -23,6 +28,11 @@ const routes = [
                 path: 'home',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
                 name: 'home',
                 component: MainPage,  // 对应的组件
+            },
+            {
+                path: 'dataay',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
+                name: 'dataay',
+                component: DataAyPage,  // 对应的组件
             },
             {
                 path: 'yonghu',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
@@ -73,6 +83,23 @@ const routes = [
                 path: 'datast',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
                 name: 'datast',
                 component: DataStPage,  // 对应的组件
+                children: [
+                    {
+                        path: 'avg', // 子路由路径 /index/datast/avg
+                        name: 'dataavg',
+                        component: DataAvgPage // 子页面组件
+                    },
+                    {
+                        path: 'agedbt', // 子路由路径 /index/datast/avg
+                        name: 'agedbt',
+                        component: AgeDbtPage // 子页面组件
+                    },
+                    {
+                        path: 'ageavg', // 子路由路径 /index/datast/avg
+                        name: 'ageavg',
+                        component: AgeAvgPage// 子页面组件
+                    },
+                ]
             },
 
 

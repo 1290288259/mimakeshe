@@ -2,7 +2,7 @@
   <div class="form-container">
     <el-form :model="form" label-width="210px">
       <el-form-item label="肝硬化（cirrhosis）">
-        <el-input v-model="form.cirrhosis" placeholder="请输入肝硬化值" />
+        <el-input v-model="form.cirrhosis" placeholder="无肝硬化：0，有肝硬化：1" />
       </el-form-item>
       <el-form-item label="年龄（age）">
         <el-input v-model="form.age" placeholder="请输入年龄" />

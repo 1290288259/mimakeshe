@@ -67,10 +67,11 @@ export default defineComponent({
 
 /* 侧边栏样式 */
 .el-aside {
-  background-color: #2c3e50;
+  background-color: #fff; /* 侧边栏背景为白色 */
   color: white;
   padding-top: 20px;
-  height: 100%;
+  height: 100%; /* 高度占满父容器 */
+  min-height: 100vh; /* 保证在内容较少时也能占满视口高度 */
 }
 
 /* 工具栏样式 */
