@@ -125,6 +125,9 @@ class AnalyseService:  # 定义分析服务类
             # 记录处理进度
             processed = 0
             
+            # 定义需要完全匹配的字段
+            exact_match_fields = ['sex', 'cirrhosis', 'PathDiagNum']
+            
             # 分批处理数据
             for offset in range(0, total_count, batch_size):
                 # 查询一批数据
@@ -132,41 +135,45 @@ class AnalyseService:  # 定义分析服务类
                 
                 # 处理这批数据
                 for record in batch:
+                    # 跳过与目标记录相同的记录
+                    if record.id == data_id:
+                        continue
+                        
                     # 对每个字段进行比较
                     for field in fields:
-                        # 跳过与目标记录相同的记录
-                        if record.id == data_id:
-                            continue
-                            
                         # 获取当前记录的密文并转换为EncryptedNumber对象
-                        ciphertext = int(getattr(record, field))  # 获取当前记录的密文
+                        ciphertext = int(getattr(record, field))
                         encrypted_record = self.encryptor.public_key.encrypt(0).__class__(
-                            self.encryptor.public_key, ciphertext)  # 将密文转换为EncryptedNumber对象
+                            self.encryptor.public_key, ciphertext)
                         
                         # 计算差值（密文减法）
-                        difference = encrypted_record - target_encrypted[field]  # 密文减法
+                        difference = encrypted_record - target_encrypted[field]
                         
                         # 解密差值
-                        decrypted_diff = self.encryptor.decrypt(difference)  # 解密差值
+                        decrypted_diff = self.encryptor.decrypt(difference)
                         
                         # 对LDL和BMI字段，需要除以FLOAT_PRECISION
-                        if field in ['LDL', 'BMI']:  # 如果是LDL或BMI字段
-                            decrypted_diff = decrypted_diff / FLOAT_PRECISION  # 除以FLOAT_PRECISION
+                        if field in ['LDL', 'BMI']:
+                            decrypted_diff = decrypted_diff / FLOAT_PRECISION
                         
                         # 解密目标值用于计算偏差范围
                         decrypted_target = self.encryptor.decrypt(target_encrypted[field])
-                        if field in ['LDL', 'BMI']:  # 如果是LDL或BMI字段
-                            decrypted_target = decrypted_target / FLOAT_PRECISION  # 除以FLOAT_PRECISION
+                        if field in ['LDL', 'BMI']:
+                            decrypted_target = decrypted_target / FLOAT_PRECISION
                         
-                        # 计算偏差百分比
-                        if decrypted_target != 0:  # 避免除以零
-                            deviation_percentage = abs(decrypted_diff / decrypted_target) * 100  # 计算偏差百分比
-                            
-                            # 判断偏差是否在5%范围内
-                            if deviation_percentage <= 5:  # 如果偏差在5%范围内
-                                intersection_counts[field] += 1  # 对应字段的交集计数加1
+                        # 判断是否属于交集
+                        if field in exact_match_fields:
+                            # 完全匹配的字段：差值必须为0
+                            if decrypted_diff == 0:
+                                intersection_counts[field] += 1
+                        else:
+                            # 其他字段：偏差在5%范围内
+                            if decrypted_target != 0:  # 避免除以零
+                                deviation_percentage = abs(decrypted_diff / decrypted_target) * 100
+                                if deviation_percentage <= 5:
+                                    intersection_counts[field] += 1
                     
-                    processed += 1  # 处理计数加1
+                    processed += 1
                 
                 # 每批次结束打印一次进度
                 print(f"隐私求交已处理: {processed}/{total_count} ({processed*100/total_count:.1f}%)")

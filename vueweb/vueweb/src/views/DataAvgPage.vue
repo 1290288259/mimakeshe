@@ -6,6 +6,15 @@
       平均值分析统计
       <span v-if="createdAt" style="font-size:16px;color:#888;">（数据时间：{{ createdAt }}）</span>
     </h2>
+    
+    <!-- 切换按钮组 -->
+    <div class="switch-container">
+      <el-radio-group v-model="dataType" @change="switchDataType">
+        <el-radio-button label="encrypted">密文平均值</el-radio-button>
+        <el-radio-button label="plain">明文平均值</el-radio-button>
+      </el-radio-group>
+    </div>
+    
     <!-- 新增flex容器，使表格和柱状图左右排列 -->
     <div class="flex-row">
       <!-- 表格区域，设置固定宽度和高度 -->
@@ -46,7 +55,9 @@ export default {
       // 存储 created_at 时间
       createdAt: '',
       // 新增：标记是否正在计算平均值
-      isCalculating: false
+      isCalculating: false,
+      // 新增：数据类型（密文/明文）
+      dataType: 'encrypted'
     };
   },
   // 组件创建时自动调用fetchAverages方法获取数据
@@ -58,11 +69,23 @@ export default {
     this.initChart();
   },
   methods: {
+    // 切换数据类型（密文/明文）
+    switchDataType() {
+      // 清空当前数据
+      this.averagesData = [];
+      this.rawAverages = {};
+      // 重新获取数据
+      this.fetchAverages();
+    },
+    
     // 异步方法：从后端获取平均值数据
     async fetchAverages() {
       try {
+        // 根据当前数据类型选择不同的接口
+        const url = this.dataType === 'encrypted' ? '/data/get_avg' : '/data/get_plain_avg';
+        
         // 发送GET请求到后端接口
-        const res = await axios.get('/data/get_avg');
+        const res = await axios.get(url);
         // 判断后端返回的状态码
         if (res.data.code === 200) {
           // 提取 created_at 字段
@@ -79,7 +102,7 @@ export default {
           // 将后端返回的对象转为适合表格展示的数组格式
           this.averagesData = Object.entries(pureData).map(([field, value]) => ({
             field: this.getFieldName(field), // 字段名转中文
-            value
+            value: this.formatValue(value)   // 格式化数值
           }));
           // 数据获取后绘制图表
           this.$nextTick(() => {
@@ -95,14 +118,25 @@ export default {
       }
     },
     
+    // 格式化数值（对于明文数据保留两位小数）
+    formatValue(value) {
+      if (this.dataType === 'plain' && typeof value === 'number') {
+        return Number(value).toFixed(2);
+      }
+      return value;
+    },
+    
     // 新增：计算最新平均值方法
     async calculateNewAverage() {
       // 设置计算状态为true
       this.isCalculating = true;
       
       try {
+        // 根据当前数据类型选择不同的接口
+        const url = this.dataType === 'encrypted' ? '/data/calculate_avg' : '/data/calculate_plain_avg';
+        
         // 调用后端计算平均值接口
-        const calcRes = await axios.get('/data/calculate_avg');
+        const calcRes = await axios.get(url);
         
         if (calcRes.data.code === 200) {
           // 计算成功，显示成功消息
@@ -155,12 +189,12 @@ export default {
       const yData = [];
       for (const [field, value] of Object.entries(this.rawAverages)) {
         xData.push(this.getFieldName(field)); // 横坐标为中文指标名
-        yData.push(value); // 纵坐标为对应数值
+        yData.push(typeof value === 'string' ? parseFloat(value) : value); // 纵坐标为对应数值，确保是数字类型
       }
       // 配置echarts的option
       const option = {
         title: {
-          text: '各项指标平均值柱状图'
+          text: this.dataType === 'encrypted' ? '密文各项指标平均值柱状图' : '明文各项指标平均值柱状图'
         },
         tooltip: {},
         xAxis: {
@@ -191,7 +225,7 @@ export default {
             data: yData,
             barWidth: '30%',    // 减小柱子宽度，留更多空间给标签
             itemStyle: {
-              color: '#409EFF'
+              color: this.dataType === 'encrypted' ? '#409EFF' : '#67C23A' // 密文蓝色，明文绿色
             },
             // 在柱顶显示数值，保留两位小数
             label: {
@@ -227,6 +261,13 @@ export default {
   padding: 20px;
   max-width: 1600px;
   margin: 0 auto;
+}
+
+/* 新增切换按钮组样式 */
+.switch-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
 }
 
 /* 新增flex布局，使表格和柱状图左右排列 */

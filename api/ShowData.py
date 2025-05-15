@@ -3,6 +3,7 @@ from db_config import db  # 导入数据库配置
 from models import UserData, Shuju2  # 导入UserData和Shuju2模型
 from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
 from config import FLOAT_PRECISION  # 导入全局变量FLOAT_PRECISION
+from service.yanzheng import calculate_averages
 
 def getdataByuserid():
     user_id = request.args.get('user_id')  # 从请求参数中获取user_id
@@ -68,21 +69,27 @@ def getAllEncryptedData():
             return jsonify({'code': 404, 'msg': '未找到加密数据'})
 
         # 获取所有数据的用户ID
-        data_ids = [record.id for record in shuju2_records]  # 从shuju2记录中提取所有数据ID
-        user_data_map = {}  # 初始化一个空字典，用于存储数据ID到用户ID的映射关系
-        user_data_records = UserData.query.filter(UserData.data_id.in_(data_ids)).all()  # 查询UserData表，获取所有与data_ids匹配的记录
+        data_ids = [str(record.id) for record in shuju2_records]  # 确保转换为字符串
         
-        for record in user_data_records:  # 遍历所有UserData记录
-            user_data_map[record.data_id] = record.user_id  # 建立数据ID到用户ID的映射关系，用于后续查找每条数据对应的用户
+        # 使用join查询确保关联关系正确
+        user_data_records = db.session.query(UserData).\
+            filter(UserData.data_id.in_(data_ids)).\
+            all()
+        
+        # 构建映射关系时确保键类型一致
+        user_data_map = {str(record.data_id): record.user_id for record in user_data_records}
 
         # 解密数据
-        encryptor = PaillierEncryptor()  # 创建Paillier加密器实例
-        decrypted_data = []  # 初始化解密后的数据列表
+        encryptor = PaillierEncryptor()
+        decrypted_data = []
         
         for record in shuju2_records:
-            # 如果在user_data表中找不到对应的记录，则user_id设为1
-            user_id = user_data_map.get(record.id, '1')
-            
+            # 获取user_id时也转换为字符串比较
+            user_id = user_data_map.get(str(record.id))
+            if user_id is None:
+                print(f"调试: 数据ID {record.id} 类型:{type(record.id)} 未找到对应记录")
+                continue
+                
             decrypted_record = {
                 'id': record.id,
                 'user_id': user_id,
@@ -149,9 +156,6 @@ def getEncryptedData():
         decrypted_data = []  # 初始化解密后的数据列表
             
         for shuju2, user_id_result in results:
-            # 如果user_id为None，则设置为1
-            user_id_value = user_id_result if user_id_result else '1'
-            
             decrypted_record = {
                 'id': shuju2.id,
                 'user_id': user_id_value,
@@ -230,3 +234,18 @@ def deleteEncryptedData():
     except Exception as e:
         db.session.rollback()
         return jsonify({'code': 500, 'msg': '删除失败: ' + str(e)})
+
+
+# 明文求平均值接口
+def getPlainAverages():
+    try:
+        from service.yanzheng import calculate_averages  # 直接导入函数
+        averages = calculate_averages()  # 直接调用函数
+        return jsonify({
+            'code': 200,
+            'msg': '平均值计算成功',
+            'data': averages
+        })
+    except Exception as e:
+        return jsonify({'code': 500, 'msg': '平均值计算失败: ' + str(e)})
+    

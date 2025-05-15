@@ -10,9 +10,10 @@ from api.User import delete_user
 from api.User import add_user
 from api.updata import updata  # 导入updata路由
 from api.Data_processing import data_processing, privacy_intersection ,get_data_analysis_result# 导入数据处理接口
-from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData
+from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages
 from config import FLOAT_PRECISION  # 从config.py导入全局变量
 from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,get_avg_by_age_group# 导入数据处理接口
+
 
 # 创建Flask应用实例
 app = Flask(__name__)
@@ -63,6 +64,12 @@ app.route('/data/get_avg_by_age_group', methods=['GET'])(get_avg_by_age_group)
 app.route('/data/privacy_intersection', methods=['GET'])(privacy_intersection)
 # 注册获取隐私求交结果路由
 app.route('/data/get_data_analysis_result', methods=['GET'])(get_data_analysis_result)
+
+# 注册获取明文验证平均值结果路由
+app.route('/data/get_plain_avg', methods=['GET'])(getPlainAverages)
+
+
+
 
 # 启动Flask应用
 if __name__ == '__main__':
