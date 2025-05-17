@@ -15,13 +15,13 @@
         </el-header>
 
         <!-- Main content area -->
-        <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1;">
+        <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1; overflow-y: auto; max-height: calc(100vh - 120px);">
           <router-view></router-view>
         </el-main>
 
         <!-- Footer section -->
         <el-footer style="background-color: #fff; padding: 10px 20px; text-align: center; border-top: 1px solid #ddd;">
-          © 2024 2200350223黄仕轩
+          © 2025 密码学课设
         </el-footer>
       </el-container>
 

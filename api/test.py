@@ -8,13 +8,21 @@ from config import FLOAT_PRECISION  # 导入浮点精度配置
 # 创建一个全局变量用于收集所有测试结果
 test_results = []  # 初始化测试结果列表
 
+# 创建一个全局变量用于存储测试数据集
+test_datasets = {  # 初始化测试数据集字典
+    "平均值计算": [],  # 平均值计算测试数据集
+    "完全匹配": [],  # 完全匹配测试数据集
+    "模糊匹配": []  # 模糊匹配测试数据集
+}
+
 def run_average_calculation_test():
     """
     测试加密数据和明文数据计算平均值的一致性
     """
     # 清空之前的测试结果
-    global test_results
+    global test_results, test_datasets
     test_results = []
+    test_datasets["平均值计算"] = []  # 清空平均值计算测试数据集
     
     # 创建加密器实例
     encryptor = PaillierEncryptor()  # 初始化加密器
@@ -24,22 +32,47 @@ def run_average_calculation_test():
     
     # 测试用例1：整数列表
     int_list = [10, 20, 30, 40, 50]  # 创建整数列表
+    test_datasets["平均值计算"].append({  # 添加到测试数据集
+        "名称": "整数列表平均值测试",
+        "数据": int_list,
+        "类型": "整数"
+    })
     test_average(encryptor, analyse_service, int_list, is_float=False, test_name="整数列表平均值测试")  # 测试整数列表的平均值计算
     
     # 测试用例2：浮点数列表
     float_list = [10.5, 20.5, 30.5, 40.5, 50.5]  # 创建浮点数列表
+    test_datasets["平均值计算"].append({  # 添加到测试数据集
+        "名称": "浮点数列表平均值测试",
+        "数据": float_list,
+        "类型": "浮点数"
+    })
     test_average(encryptor, analyse_service, float_list, is_float=True, test_name="浮点数列表平均值测试")  # 测试浮点数列表的平均值计算，标记为浮点数
     
     # 测试用例3：大量随机数据
     random_list = [random.randint(1, 1000) for _ in range(100)]  # 创建100个1-1000之间的随机整数
+    test_datasets["平均值计算"].append({  # 添加到测试数据集
+        "名称": "大量随机数据平均值测试",
+        "数据": random_list,
+        "类型": "整数"
+    })
     test_average(encryptor, analyse_service, random_list, test_name="大量随机数据平均值测试")  # 测试随机数列表的平均值计算
     
     # 测试用例4：包含负数的列表
     mixed_list = [-50, -25, 0, 25, 50]  # 创建包含负数的列表
+    test_datasets["平均值计算"].append({  # 添加到测试数据集
+        "名称": "包含负数的列表平均值测试",
+        "数据": mixed_list,
+        "类型": "整数"
+    })
     test_average(encryptor, analyse_service, mixed_list, test_name="包含负数的列表平均值测试")  # 测试包含负数的列表的平均值计算
     
     # 测试用例5：大数值列表
     large_list = [10000, 20000, 30000, 40000, 50000]  # 创建大数值列表
+    test_datasets["平均值计算"].append({  # 添加到测试数据集
+        "名称": "大数值列表平均值测试",
+        "数据": large_list,
+        "类型": "整数"
+    })
     test_average(encryptor, analyse_service, large_list, test_name="大数值列表平均值测试")  # 测试大数值列表的平均值计算
     
     # 返回测试结果
@@ -114,8 +147,9 @@ def run_exact_match_test():
     测试隐私保护的完全匹配功能
     """
     # 清空之前的测试结果
-    global test_results
+    global test_results, test_datasets
     test_results = []
+    test_datasets["完全匹配"] = []  # 清空完全匹配测试数据集
     
     # 创建加密器实例
     encryptor = PaillierEncryptor()  # 初始化加密器
@@ -144,6 +178,15 @@ def run_exact_match_test():
             "测试数据": [0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1]  # 测试数据（模拟吸烟状态，0表示不吸烟，1表示吸烟）
         }
     ]
+    
+    # 将测试用例添加到测试数据集
+    for test_case in test_cases:
+        test_datasets["完全匹配"].append({
+            "名称": test_case["测试名称"],
+            "数据": test_case["测试数据"],
+            "目标值": test_case["目标值"],
+            "类型": test_case["数据类型"]
+        })
     
     # 循环测试每个测试用例
     for test_case in test_cases:
@@ -199,7 +242,7 @@ def run_fuzzy_match_test():
     测试隐私保护的模糊匹配功能
     """
     # 清空之前的测试结果
-    global test_results
+    global test_results, test_datasets
     test_results = []
     
     # 创建加密器实例
@@ -241,6 +284,15 @@ def run_fuzzy_match_test():
             "测试数据": [5.8, 6.3, 6.0, 5.9, 6.2, 6.5, 5.7, 6.4, 6.1, 5.6, 6.0, 6.2]  # 测试数据（模拟血糖字段）
         }
     ]
+    
+    # 将测试用例添加到测试数据集
+    for test_case in test_cases:
+        test_datasets["模糊匹配"].append({
+            "名称": test_case["测试名称"],
+            "数据": test_case["测试数据"],
+            "目标值": test_case["目标值"],
+            "类型": test_case["数据类型"]
+        })
     
     # 循环测试每个测试用例
     for test_case in test_cases:
@@ -330,7 +382,7 @@ def run_all_tests():
     运行所有测试并返回结果
     """
     # 清空之前的测试结果
-    global test_results
+    global test_results, test_datasets
     test_results = []
     
     # 运行平均值计算测试
@@ -354,7 +406,8 @@ def run_all_tests():
         'msg': '测试执行成功',
         'data': {
             '测试结果': all_results,
-            '测试汇总': summary
+            '测试汇总': summary,
+            '测试数据集': test_datasets  # 添加测试数据集到响应
         }
     })
 
@@ -370,7 +423,8 @@ def run_average_test():
         'msg': '平均值计算测试执行成功',
         'data': {
             '测试结果': results,
-            '测试汇总': summary
+            '测试汇总': summary,
+            '测试数据集': {"平均值计算": test_datasets["平均值计算"]}  # 添加平均值计算测试数据集到响应
         }
     })
 
@@ -386,7 +440,8 @@ def run_exact_match_test_api():
         'msg': '完全匹配测试执行成功',
         'data': {
             '测试结果': results,
-            '测试汇总': summary
+            '测试汇总': summary,
+            '测试数据集': {"完全匹配": test_datasets["完全匹配"]}  # 添加完全匹配测试数据集到响应
         }
     })
 
@@ -402,6 +457,7 @@ def run_fuzzy_match_test_api():
         'msg': '模糊匹配测试执行成功',
         'data': {
             '测试结果': results,
-            '测试汇总': summary
+            '测试汇总': summary,
+            '测试数据集': {"模糊匹配": test_datasets["模糊匹配"]}  # 添加模糊匹配测试数据集到响应
         }
     })

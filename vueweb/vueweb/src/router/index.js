@@ -4,11 +4,6 @@ import IndexPage from '@/views/IndexPage.vue';
 import LoginPage from '@/views/LoginPage.vue';
 import MainPage from '@/views/MainPage.vue';
 import yuangongPage from '@/views/yuangongPage.vue'
-import userPage from '@/views/userPage.vue';
-import huowuPage from '@/views/huowuPage.vue';
-import goumaiPage from '@/views/goumaiPage.vue';
-import cartPage from "@/views/cartPage.vue";
-import fahuoPage from "@/views/fahuoPage.vue";
 import dataupPage from "@/views/dataupPage.vue";
 import MyDataPage from '@/views/MyDataPage.vue';
 import DataglPage from '@/views/DataglPage.vue';
@@ -39,31 +34,6 @@ const routes = [
                 path: 'yonghu',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
                 name: 'yonghu',
                 component: yuangongPage,  // 对应的组件
-            },
-            {
-                path: 'user',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'user',
-                component: userPage,  // 对应的组件
-            },
-            {
-                path: 'huowu',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'huowu',
-                component: huowuPage,  // 对应的组件
-            },
-            {
-                path: 'goumai',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'goumai',
-                component: goumaiPage,  // 对应的组件
-            },
-            {
-                path: 'cart',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'cart',
-                component: cartPage,  // 对应的组件
-            },
-            {
-                path: 'fahuo',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
-                name: 'fahuo',
-                component: fahuoPage,  // 对应的组件
             },
             {
                 path: 'mydata',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'

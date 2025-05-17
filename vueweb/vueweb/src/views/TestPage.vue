@@ -58,6 +58,101 @@
       </el-descriptions>
     </el-card>
     
+    <!-- 测试用例数据展示 -->
+    <el-card v-if="testDatasets && Object.keys(testDatasets).length > 0" class="test-datasets-card">
+      <template #header>
+        <div class="card-header">
+          <span>测试用例数据</span>
+          <el-tag type="info" effect="plain">
+            用于测试的原始数据集
+          </el-tag>
+        </div>
+      </template>
+      
+      <!-- 平均值计算测试用例 -->
+      <div v-if="testDatasets['平均值计算'] && testDatasets['平均值计算'].length > 0" class="test-section">
+        <h4>平均值计算测试用例</h4>
+        <el-table :data="testDatasets['平均值计算']" stripe border>
+          <el-table-column prop="名称" label="测试名称" width="180"></el-table-column>
+          <el-table-column prop="类型" label="数据类型" width="100"></el-table-column>
+          <el-table-column label="测试数据" min-width="300">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ JSON.stringify(scope.row.数据, null, 2) }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看数据 ({{ scope.row.数据.length }}项)</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      
+      <!-- 完全匹配测试用例 -->
+      <div v-if="testDatasets['完全匹配'] && testDatasets['完全匹配'].length > 0" class="test-section">
+        <h4>完全匹配测试用例</h4>
+        <el-table :data="testDatasets['完全匹配']" stripe border>
+          <el-table-column prop="名称" label="测试名称" width="180"></el-table-column>
+          <el-table-column prop="类型" label="数据类型" width="100"></el-table-column>
+          <el-table-column prop="目标值" label="目标值" width="100"></el-table-column>
+          <el-table-column label="测试数据" min-width="300">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ JSON.stringify(scope.row.数据, null, 2) }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看数据 ({{ scope.row.数据.length }}项)</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      
+      <!-- 模糊匹配测试用例 -->
+      <div v-if="testDatasets['模糊匹配'] && testDatasets['模糊匹配'].length > 0" class="test-section">
+        <h4>模糊匹配测试用例</h4>
+        <el-table :data="testDatasets['模糊匹配']" stripe border>
+          <el-table-column prop="名称" label="测试名称" width="180"></el-table-column>
+          <el-table-column prop="类型" label="数据类型" width="100"></el-table-column>
+          <el-table-column prop="目标值" label="目标值" width="100"></el-table-column>
+          <el-table-column label="测试数据" min-width="300">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ JSON.stringify(scope.row.数据, null, 2) }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看数据 ({{ scope.row.数据.length }}项)</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-card>
+    
     <!-- 测试结果详情 -->
     <div v-if="testResults.length > 0" class="test-results">
       <h3>测试详情</h3>
@@ -161,6 +256,8 @@ export default {
       testResults: [],
       // 测试结果汇总
       testSummary: null,
+      // 测试数据集
+      testDatasets: {},
       // 加载状态
       loading: false
     };
@@ -191,6 +288,8 @@ export default {
           // 更新测试结果和汇总
           this.testResults = response.data.data['测试结果'];
           this.testSummary = response.data.data['测试汇总'];
+          // 更新测试数据集
+          this.testDatasets = response.data.data['测试数据集'];
           
           // 显示成功消息
           ElMessage.success(response.data.msg || '测试执行成功');
@@ -199,6 +298,7 @@ export default {
           ElMessage.error(response.data.msg || '测试执行失败');
           this.testResults = [];
           this.testSummary = null;
+          this.testDatasets = {};
         }
       } catch (error) {
         // 处理请求异常
@@ -206,6 +306,7 @@ export default {
         ElMessage.error('测试请求失败，请稍后重试');
         this.testResults = [];
         this.testSummary = null;
+        this.testDatasets = {};
       } finally {
         // 无论成功失败都关闭加载状态
         this.loading = false;
@@ -248,7 +349,7 @@ export default {
 }
 
 /* 汇总卡片样式 */
-.summary-card {
+.summary-card, .test-datasets-card {
   margin-bottom: 30px;
 }
 
