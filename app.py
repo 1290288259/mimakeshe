@@ -9,11 +9,11 @@ from api.User import get_user_by_id
 from api.User import delete_user
 from api.User import add_user
 from api.updata import updata  # 导入updata路由
-from api.Data_processing import data_processing, privacy_intersection ,get_data_analysis_result# 导入数据处理接口
+from api.Data_processing import  privacy_intersection ,get_data_analysis_result# 导入数据处理接口
 from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages
 from config import FLOAT_PRECISION  # 从config.py导入全局变量
 from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,get_avg_by_age_group# 导入数据处理接口
-
+from api.test import run_all_tests, run_average_test, run_exact_match_test_api, run_fuzzy_match_test_api
 
 # 创建Flask应用实例
 app = Flask(__name__)
@@ -39,8 +39,6 @@ app.route('/user/delete', methods=['GET'])(delete_user)
 app.route('/user/add', methods=['POST'])(add_user)
 # 注册数据上传路由
 app.route('/updata', methods=['POST'])(updata)
-# 注册数据处理路由
-app.route('/data_processing', methods=['GET'])(data_processing)
 # 注册根据用户ID获取数据路由
 app.route('/data/getdataByuserid', methods=['GET'])(getdataByuserid)
 # 注册获取所有加密数据路由
@@ -69,6 +67,12 @@ app.route('/data/get_data_analysis_result', methods=['GET'])(get_data_analysis_r
 app.route('/data/get_plain_avg', methods=['GET'])(getPlainAverages)
 
 
+
+# 注册测试相关路由
+app.route('/api/test/all', methods=['GET'])(run_all_tests)
+app.route('/api/test/average', methods=['GET'])(run_average_test)
+app.route('/api/test/exact_match', methods=['GET'])(run_exact_match_test_api)
+app.route('/api/test/fuzzy_match', methods=['GET'])(run_fuzzy_match_test_api)
 
 
 # 启动Flask应用

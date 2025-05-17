@@ -1,3 +1,4 @@
+from flask import jsonify  # 导入jsonify用于返回JSON格式响应
 from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
 from service.analyse import AnalyseService  # 导入分析服务
 import random  # 导入随机数模块
@@ -7,10 +8,14 @@ from config import FLOAT_PRECISION  # 导入浮点精度配置
 # 创建一个全局变量用于收集所有测试结果
 test_results = []  # 初始化测试结果列表
 
-def test_average_calculation():
+def run_average_calculation_test():
     """
     测试加密数据和明文数据计算平均值的一致性
     """
+    # 清空之前的测试结果
+    global test_results
+    test_results = []
+    
     # 创建加密器实例
     encryptor = PaillierEncryptor()  # 初始化加密器
     
@@ -18,29 +23,27 @@ def test_average_calculation():
     analyse_service = AnalyseService()  # 初始化分析服务
     
     # 测试用例1：整数列表
-    print("\n测试用例1：整数列表")  # 打印测试用例标题
     int_list = [10, 20, 30, 40, 50]  # 创建整数列表
     test_average(encryptor, analyse_service, int_list, is_float=False, test_name="整数列表平均值测试")  # 测试整数列表的平均值计算
     
     # 测试用例2：浮点数列表
-    print("\n测试用例2：浮点数列表")  # 打印测试用例标题
     float_list = [10.5, 20.5, 30.5, 40.5, 50.5]  # 创建浮点数列表
     test_average(encryptor, analyse_service, float_list, is_float=True, test_name="浮点数列表平均值测试")  # 测试浮点数列表的平均值计算，标记为浮点数
     
     # 测试用例3：大量随机数据
-    print("\n测试用例3：大量随机数据")  # 打印测试用例标题
     random_list = [random.randint(1, 1000) for _ in range(100)]  # 创建100个1-1000之间的随机整数
     test_average(encryptor, analyse_service, random_list, test_name="大量随机数据平均值测试")  # 测试随机数列表的平均值计算
     
     # 测试用例4：包含负数的列表
-    print("\n测试用例4：包含负数的列表")  # 打印测试用例标题
     mixed_list = [-50, -25, 0, 25, 50]  # 创建包含负数的列表
     test_average(encryptor, analyse_service, mixed_list, test_name="包含负数的列表平均值测试")  # 测试包含负数的列表的平均值计算
     
     # 测试用例5：大数值列表
-    print("\n测试用例5：大数值列表")  # 打印测试用例标题
     large_list = [10000, 20000, 30000, 40000, 50000]  # 创建大数值列表
     test_average(encryptor, analyse_service, large_list, test_name="大数值列表平均值测试")  # 测试大数值列表的平均值计算
+    
+    # 返回测试结果
+    return test_results
 
 def test_average(encryptor, analyse_service, data_list, is_float=False, test_name="未命名测试"):
     """
@@ -59,6 +62,7 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
         "测试类型": "平均值计算",  # 测试类型
         "数据类型": "浮点数" if is_float else "整数",  # 数据类型
         "数据量": len(data_list),  # 数据量
+        "明文数据": data_list[:10] + (["..."] if len(data_list) > 10 else []),  # 明文数据（限制显示前10个）
         "明文平均值": None,  # 明文平均值
         "加密平均值": None,  # 加密平均值
         "误差": None,  # 误差
@@ -70,8 +74,6 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
     # 计算明文平均值
     plaintext_avg = sum(data_list) / len(data_list)  # 计算明文平均值
     result["明文平均值"] = plaintext_avg  # 记录明文平均值
-    print(f"明文数据: {data_list}")  # 打印明文数据
-    print(f"明文平均值: {plaintext_avg}")  # 打印明文平均值
     
     # 加密数据
     start_time = time.time()  # 记录开始时间
@@ -79,14 +81,12 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
     if is_float:
         # 浮点数需要先乘以精度因子，转为整数再加密
         encrypted_data = [str(encryptor.encrypt(int(value * FLOAT_PRECISION)).ciphertext()) for value in data_list]
-        print(f"浮点数使用精度因子: {FLOAT_PRECISION}")  # 打印使用的精度因子
     else:
         # 整数直接加密
         encrypted_data = [str(encryptor.encrypt(value).ciphertext()) for value in data_list]
     
     encryption_time = time.time() - start_time  # 计算加密耗时
     result["加密耗时(秒)"] = round(encryption_time, 4)  # 记录加密耗时
-    print(f"加密耗时: {encryption_time:.4f}秒")  # 打印加密耗时
     
     # 使用加密数据计算平均值
     start_time = time.time()  # 记录开始时间
@@ -99,7 +99,6 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
     calculation_time = time.time() - start_time  # 计算平均值计算耗时
     result["计算耗时(秒)"] = round(calculation_time, 4)  # 记录计算耗时
     result["加密平均值"] = encrypted_avg  # 记录加密平均值
-    print(f"加密平均值计算耗时: {calculation_time:.4f}秒")  # 打印平均值计算耗时
     
     # 比较结果
     error = abs(encrypted_avg - plaintext_avg)  # 计算误差
@@ -107,18 +106,16 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
     is_consistent = error < 0.0001  # 判断结果是否一致
     result["结果"] = "一致" if is_consistent else "不一致"  # 记录测试结果
     
-    print(f"加密后计算的平均值: {encrypted_avg}")  # 打印加密后计算的平均值
-    print(f"误差: {error}")  # 打印误差
-    print(f"结果{'一致' if is_consistent else '不一致'}")  # 判断结果是否一致
-    
     # 将结果添加到全局结果列表
     test_results.append(result)  # 添加结果到全局列表
 
-def test_privacy_preserving_exact_match():
+def run_exact_match_test():
     """
     测试隐私保护的完全匹配功能
     """
-    print("\n测试隐私保护的完全匹配功能")  # 打印测试标题
+    # 清空之前的测试结果
+    global test_results
+    test_results = []
     
     # 创建加密器实例
     encryptor = PaillierEncryptor()  # 初始化加密器
@@ -149,26 +146,25 @@ def test_privacy_preserving_exact_match():
     ]
     
     # 循环测试每个测试用例
-    for idx, test_case in enumerate(test_cases):
-        print(f"\n测试用例{idx+1}：{test_case['测试名称']}")  # 打印测试用例标题
+    for test_case in test_cases:
+        # 获取目标值和测试数据
+        target_value = test_case["目标值"]  # 目标值
+        test_data = test_case["测试数据"]  # 测试数据
         
         # 初始化结果字典
         result = {
             "测试名称": test_case["测试名称"],  # 测试名称
             "测试类型": "完全匹配",  # 测试类型
             "数据类型": test_case["数据类型"],  # 数据类型
-            "数据量": len(test_case["测试数据"]),  # 数据量
-            "目标值": test_case["目标值"],  # 目标值
+            "数据量": len(test_data),  # 数据量
+            "目标值": target_value,  # 目标值
+            "测试数据": test_data,  # 测试数据
             "明文匹配百分比": None,  # 明文匹配百分比
             "加密匹配百分比": None,  # 加密匹配百分比
             "误差": None,  # 误差
             "计算耗时(秒)": None,  # 计算耗时
             "结果": None  # 测试结果
         }
-        
-        # 获取目标值和测试数据
-        target_value = test_case["目标值"]  # 目标值
-        test_data = test_case["测试数据"]  # 测试数据
         
         # 加密数据
         encrypted_target = str(encryptor.encrypt(target_value).ciphertext())  # 加密目标值
@@ -179,10 +175,6 @@ def test_privacy_preserving_exact_match():
         plaintext_percentage = (match_count / len(test_data)) * 100  # 计算明文匹配百分比
         result["明文匹配百分比"] = plaintext_percentage  # 记录明文匹配百分比
         
-        print(f"明文数据: {test_data}")  # 打印明文数据
-        print(f"目标值: {target_value}")  # 打印目标值
-        print(f"明文匹配百分比: {plaintext_percentage:.2f}%")  # 打印明文匹配百分比
-        
         # 使用隐私保护的完全匹配方法计算
         start_time = time.time()  # 记录开始时间
         encrypted_percentage = analyse_service.privacy_preserving_exact_match(encrypted_target, encrypted_data)  # 计算加密数据的匹配百分比
@@ -190,26 +182,25 @@ def test_privacy_preserving_exact_match():
         result["计算耗时(秒)"] = round(calculation_time, 4)  # 记录计算耗时
         result["加密匹配百分比"] = encrypted_percentage  # 记录加密匹配百分比
         
-        print(f"加密匹配百分比计算耗时: {calculation_time:.4f}秒")  # 打印匹配百分比计算耗时
-        print(f"加密后计算的匹配百分比: {encrypted_percentage:.2f}%")  # 打印加密后计算的匹配百分比
-        
         # 比较结果
         error = abs(encrypted_percentage - plaintext_percentage)  # 计算误差
         result["误差"] = error  # 记录误差
         is_consistent = error < 0.0001  # 判断结果是否一致
         result["结果"] = "一致" if is_consistent else "不一致"  # 记录测试结果
         
-        print(f"误差: {error:.4f}%")  # 打印误差
-        print(f"结果{'一致' if is_consistent else '不一致'}")  # 判断结果是否一致
-        
         # 将结果添加到全局结果列表
         test_results.append(result)  # 添加结果到全局列表
+    
+    # 返回测试结果
+    return test_results
 
-def test_privacy_preserving_fuzzy_match():
+def run_fuzzy_match_test():
     """
     测试隐私保护的模糊匹配功能
     """
-    print("\n测试隐私保护的模糊匹配功能")  # 打印测试标题
+    # 清空之前的测试结果
+    global test_results
+    test_results = []
     
     # 创建加密器实例
     encryptor = PaillierEncryptor()  # 初始化加密器
@@ -252,26 +243,25 @@ def test_privacy_preserving_fuzzy_match():
     ]
     
     # 循环测试每个测试用例
-    for idx, test_case in enumerate(test_cases):
-        print(f"\n测试用例{idx+1}：{test_case['测试名称']}")  # 打印测试用例标题
+    for test_case in test_cases:
+        # 获取目标值和测试数据
+        target_value = test_case["目标值"]  # 目标值
+        test_data = test_case["测试数据"]  # 测试数据
         
         # 初始化结果字典
         result = {
             "测试名称": test_case["测试名称"],  # 测试名称
             "测试类型": "模糊匹配",  # 测试类型
             "数据类型": test_case["数据类型"],  # 数据类型
-            "数据量": len(test_case["测试数据"]),  # 数据量
-            "目标值": test_case["目标值"],  # 目标值
+            "数据量": len(test_data),  # 数据量
+            "目标值": target_value,  # 目标值
+            "测试数据": test_data,  # 测试数据
             "明文匹配百分比": None,  # 明文匹配百分比
             "加密匹配百分比": None,  # 加密匹配百分比
             "误差": None,  # 误差
             "计算耗时(秒)": None,  # 计算耗时
             "结果": None  # 测试结果
         }
-        
-        # 获取目标值和测试数据
-        target_value = test_case["目标值"]  # 目标值
-        test_data = test_case["测试数据"]  # 测试数据
         
         # 加密数据（注意：浮点数需要先乘以精度因子）
         encrypted_target = str(encryptor.encrypt(int(target_value * FLOAT_PRECISION)).ciphertext())  # 加密目标值
@@ -288,10 +278,6 @@ def test_privacy_preserving_fuzzy_match():
         plaintext_percentage = (match_count / len(test_data)) * 100  # 计算明文匹配百分比
         result["明文匹配百分比"] = plaintext_percentage  # 记录明文匹配百分比
         
-        print(f"明文数据: {test_data}")  # 打印明文数据
-        print(f"目标值: {target_value}")  # 打印目标值
-        print(f"明文模糊匹配百分比: {plaintext_percentage:.2f}%")  # 打印明文模糊匹配百分比
-        
         # 使用隐私保护的模糊匹配方法计算
         start_time = time.time()  # 记录开始时间
         encrypted_percentage = analyse_service.privacy_preserving_fuzzy_match(encrypted_target, encrypted_data, FLOAT_PRECISION)  # 计算加密数据的模糊匹配百分比
@@ -299,83 +285,123 @@ def test_privacy_preserving_fuzzy_match():
         result["计算耗时(秒)"] = round(calculation_time, 4)  # 记录计算耗时
         result["加密匹配百分比"] = encrypted_percentage  # 记录加密匹配百分比
         
-        print(f"加密模糊匹配百分比计算耗时: {calculation_time:.4f}秒")  # 打印模糊匹配百分比计算耗时
-        print(f"加密后计算的模糊匹配百分比: {encrypted_percentage:.2f}%")  # 打印加密后计算的模糊匹配百分比
-        
         # 比较结果
         error = abs(encrypted_percentage - plaintext_percentage)  # 计算误差
         result["误差"] = error  # 记录误差
         is_consistent = error < 0.0001  # 判断结果是否一致
         result["结果"] = "一致" if is_consistent else "不一致"  # 记录测试结果
         
-        print(f"误差: {error:.4f}%")  # 打印误差
-        print(f"结果{'一致' if is_consistent else '不一致'}")  # 判断结果是否一致
-        
         # 将结果添加到全局结果列表
         test_results.append(result)  # 添加结果到全局列表
-
-def print_test_summary():
-    """
-    打印测试结果汇总
-    """
-    print("\n" + "="*80)  # 打印分隔线
-    print("测试结果汇总".center(80))  # 打印标题，居中显示
-    print("="*80)  # 打印分隔线
     
+    # 返回测试结果
+    return test_results
+
+def generate_test_summary(results):
+    """
+    生成测试结果汇总
+    """
     # 按测试类型分组
-    avg_tests = [r for r in test_results if r["测试类型"] == "平均值计算"]  # 平均值计算测试
-    exact_match_tests = [r for r in test_results if r["测试类型"] == "完全匹配"]  # 完全匹配测试
-    fuzzy_match_tests = [r for r in test_results if r["测试类型"] == "模糊匹配"]  # 模糊匹配测试
+    avg_tests = [r for r in results if r["测试类型"] == "平均值计算"]  # 平均值计算测试
+    exact_match_tests = [r for r in results if r["测试类型"] == "完全匹配"]  # 完全匹配测试
+    fuzzy_match_tests = [r for r in results if r["测试类型"] == "模糊匹配"]  # 模糊匹配测试
     
-    # 打印平均值计算测试结果
-    if avg_tests:  # 如果有平均值计算测试
-        print("\n1. 平均值计算测试结果:")  # 打印小标题
-        print("-"*80)  # 打印分隔线
-        print(f"{'测试名称':<20} {'数据类型':<10} {'数据量':<8} {'明文平均值':<12} {'加密平均值':<12} {'误差':<10} {'加密耗时(秒)':<14} {'计算耗时(秒)':<14} {'结果':<6}")  # 打印表头
-        print("-"*80)  # 打印分隔线
-        
-        for test in avg_tests:  # 遍历平均值计算测试结果
-            print(f"{test['测试名称']:<20} {test['数据类型']:<10} {test['数据量']:<8} {test['明文平均值']:<12.4f} {test['加密平均值']:<12.4f} {test['误差']:<10.6f} {test['加密耗时(秒)']:<14.4f} {test['计算耗时(秒)']:<14.4f} {test['结果']:<6}")  # 打印测试结果
+    # 计算成功率
+    success_count = sum(1 for r in results if r["结果"] == "一致")  # 计算成功测试数量
+    total_count = len(results)  # 计算总测试数量
+    success_rate = (success_count / total_count * 100) if total_count > 0 else 0  # 计算成功率
     
-    # 打印完全匹配测试结果
-    if exact_match_tests:  # 如果有完全匹配测试
-        print("\n2. 完全匹配测试结果:")  # 打印小标题
-        print("-"*80)  # 打印分隔线
-        print(f"{'测试名称':<20} {'数据类型':<10} {'数据量':<8} {'目标值':<8} {'明文匹配百分比':<16} {'加密匹配百分比':<16} {'误差':<10} {'计算耗时(秒)':<14} {'结果':<6}")  # 打印表头
-        print("-"*80)  # 打印分隔线
-        
-        for test in exact_match_tests:  # 遍历完全匹配测试结果
-            print(f"{test['测试名称']:<20} {test['数据类型']:<10} {test['数据量']:<8} {test['目标值']:<8} {test['明文匹配百分比']:<16.2f} {test['加密匹配百分比']:<16.2f} {test['误差']:<10.6f} {test['计算耗时(秒)']:<14.4f} {test['结果']:<6}")  # 打印测试结果
+    # 构建汇总信息
+    summary = {
+        "总测试数": total_count,  # 总测试数
+        "成功测试数": success_count,  # 成功测试数
+        "失败测试数": total_count - success_count,  # 失败测试数
+        "成功率": round(success_rate, 2),  # 成功率
+        "平均值计算测试数": len(avg_tests),  # 平均值计算测试数
+        "完全匹配测试数": len(exact_match_tests),  # 完全匹配测试数
+        "模糊匹配测试数": len(fuzzy_match_tests)  # 模糊匹配测试数
+    }
     
-    # 打印模糊匹配测试结果
-    if fuzzy_match_tests:  # 如果有模糊匹配测试
-        print("\n3. 模糊匹配测试结果:")  # 打印小标题
-        print("-"*80)  # 打印分隔线
-        print(f"{'测试名称':<20} {'数据类型':<10} {'数据量':<8} {'目标值':<8} {'明文匹配百分比':<16} {'加密匹配百分比':<16} {'误差':<10} {'计算耗时(秒)':<14} {'结果':<6}")  # 打印表头
-        print("-"*80)  # 打印分隔线
-        
-        for test in fuzzy_match_tests:  # 遍历模糊匹配测试结果
-            print(f"{test['测试名称']:<20} {test['数据类型']:<10} {test['数据量']:<8} {test['目标值']:<8} {test['明文匹配百分比']:<16.2f} {test['加密匹配百分比']:<16.2f} {test['误差']:<10.6f} {test['计算耗时(秒)']:<14.4f} {test['结果']:<6}")  # 打印测试结果
-    
-    # 打印总结
-    success_count = sum(1 for r in test_results if r["结果"] == "一致")  # 计算成功测试数量
-    total_count = len(test_results)  # 计算总测试数量
-    
-    print("\n" + "="*80)  # 打印分隔线
-    print(f"测试总结: 共执行 {total_count} 个测试，{success_count} 个成功，{total_count - success_count} 个失败")  # 打印测试总结
-    print(f"成功率: {success_count/total_count*100:.2f}%")  # 打印成功率
-    print("="*80)  # 打印分隔线
+    return summary
 
-if __name__ == "__main__":
-    # 测试加密平均值计算
-    test_average_calculation()  # 执行平均值计算测试
+# API接口函数
+def run_all_tests():
+    """
+    运行所有测试并返回结果
+    """
+    # 清空之前的测试结果
+    global test_results
+    test_results = []
     
-    # 测试隐私保护的完全匹配
-    test_privacy_preserving_exact_match()  # 执行完全匹配测试
+    # 运行平均值计算测试
+    avg_results = run_average_calculation_test()
     
-    # 测试隐私保护的模糊匹配
-    test_privacy_preserving_fuzzy_match()  # 执行模糊匹配测试
+    # 运行完全匹配测试
+    exact_match_results = run_exact_match_test()
     
-    # 打印测试结果汇总
-    print_test_summary()  # 打印测试结果汇总
+    # 运行模糊匹配测试
+    fuzzy_match_results = run_fuzzy_match_test()
     
+    # 合并所有测试结果
+    all_results = avg_results + exact_match_results + fuzzy_match_results
+    
+    # 生成测试汇总
+    summary = generate_test_summary(all_results)
+    
+    # 返回结果
+    return jsonify({
+        'code': 200,
+        'msg': '测试执行成功',
+        'data': {
+            '测试结果': all_results,
+            '测试汇总': summary
+        }
+    })
+
+def run_average_test():
+    """
+    仅运行平均值计算测试
+    """
+    results = run_average_calculation_test()
+    summary = generate_test_summary(results)
+    
+    return jsonify({
+        'code': 200,
+        'msg': '平均值计算测试执行成功',
+        'data': {
+            '测试结果': results,
+            '测试汇总': summary
+        }
+    })
+
+def run_exact_match_test_api():
+    """
+    仅运行完全匹配测试
+    """
+    results = run_exact_match_test()
+    summary = generate_test_summary(results)
+    
+    return jsonify({
+        'code': 200,
+        'msg': '完全匹配测试执行成功',
+        'data': {
+            '测试结果': results,
+            '测试汇总': summary
+        }
+    })
+
+def run_fuzzy_match_test_api():
+    """
+    仅运行模糊匹配测试
+    """
+    results = run_fuzzy_match_test()
+    summary = generate_test_summary(results)
+    
+    return jsonify({
+        'code': 200,
+        'msg': '模糊匹配测试执行成功',
+        'data': {
+            '测试结果': results,
+            '测试汇总': summary
+        }
+    })

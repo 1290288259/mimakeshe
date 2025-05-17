@@ -17,6 +17,7 @@ import DataAvgPage from '@/views/DataAvgPage.vue'; // 已经引入
 import AgeDbtPage from '@/views/AgeDbtPage.vue';
 import AgeAvgPage from '@/views/AgeAvgPage.vue';
 import DataAyPage from '@/views/DataAyPage.vue';
+import TestPage from '@/views/TestPage.vue';
 
 const routes = [
     {
@@ -78,6 +79,11 @@ const routes = [
                 path: 'datagl',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
                 name: 'datagl',
                 component: DataglPage,  // 对应的组件
+            },
+            {
+                path: 'test',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'
+                name: 'test',
+                component: TestPage,  // 对应的组件
             },
             {
                 path: 'datast',  // 子路由的路径是相对于父路由的，省略前面的 '/index2'

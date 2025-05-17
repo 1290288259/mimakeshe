@@ -1,6 +1,6 @@
 # 导入必要的模块
 from service.analyse import AnalyseService
-from flask import jsonify, current_app
+from flask import jsonify, current_app ,request
 from models import Avg , Shuju2  # 导入你定义的Avg模型
 from db_config import db  # 导入数据库配置
 from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
@@ -14,14 +14,12 @@ def calculate_avg():
         JSON响应: 包含状态码、消息和各字段平均值数据
     """
     try:
-        # 获取当前Flask应用上下文对象
-        app = current_app._get_current_object()
         
         # 创建分析服务实例
         service = AnalyseService()
         
         # 需要计算平均值的字段列表
-        numeric_fields = [ 'age', 'cholesterol',
+        numeric_fields = ['age', 'cholesterol',
                          'triglyceride', 'HDL', 'LDL', 'BMI',
                          'ALT', 'AST', 'glucose']
         
@@ -31,8 +29,35 @@ def calculate_avg():
         # 单线程：依次计算每个字段的平均值
         for field in numeric_fields:
             try:
-                # 直接调用分析服务的平均值计算方法
-                avg = service.average_encrypted_data(field)
+                # 查询记录总数
+                record_count = Shuju2.query.count()
+                print(f"{field}字段的总记录数: {record_count}")
+                
+                if record_count == 0:  # 如果没有记录
+                    results[field] = 0
+                    continue
+                
+                # 分批查询处理，减少内存占用
+                batch_size = 50  # 每批处理50条记录
+                encrypted_data = []  # 存储加密数据
+                
+                # 分批查询数据
+                for offset in range(0, record_count, batch_size):
+                    # 查询一批数据
+                    batch = Shuju2.query.with_entities(
+                        getattr(Shuju2, field)
+                    ).limit(batch_size).offset(offset).all()
+                    
+                    # 提取密文数据
+                    for record in batch:
+                        encrypted_data.append(record[0])
+                    
+                    # 打印查询进度
+                    print(f"{field}字段数据查询进度: {min(offset+batch_size, record_count)}/{record_count}")
+                
+                # 调用分析服务的平均值计算方法，传入加密数据列表
+                avg = service.average_encrypted_data(encrypted_data)
+                
                 # 保留FLOAT_PRECISION位小数
                 if avg is not None:
                     avg = round(avg, FLOAT_PRECISION)
@@ -179,8 +204,7 @@ def get_avg_by_age_group():
         JSON响应: 包含状态码、消息和各年龄段平均值数据
     """
     try:
-        # 从请求中获取字段名称
-        from flask import request  # 导入request模块
+        # 从请求参数中获取字段名称
         field_name = request.args.get('field_name')  # 获取字段名称参数
         
         # 验证字段名称是否有效
@@ -204,8 +228,80 @@ def get_avg_by_age_group():
         # 创建分析服务实例
         service = AnalyseService()
         
-        # 调用服务层方法计算各年龄段平均值
-        result = service.calculate_avg_by_age_group(field_name)
+        # 从数据库中查询所有记录，但只获取年龄字段和目标字段
+        records = Shuju2.query.with_entities(
+            Shuju2.age, 
+            getattr(Shuju2, field_name)
+        ).all()  # 只获取需要的两个字段
+        
+        if not records:  # 如果没有记录
+            return jsonify({
+                'code': 404,
+                'msg': '没有找到有效数据',
+                'data': None
+            })
+        
+        # 初始化年龄段分组
+        age_groups = {
+            '0-9': [],    # 0-9岁年龄段的数据列表
+            '10-19': [],  # 10-19岁年龄段的数据列表
+            '20-29': [],  # 20-29岁年龄段的数据列表
+            '30-39': [],  # 30-39岁年龄段的数据列表
+            '40-49': [],  # 40-49岁年龄段的数据列表
+            '50-59': [],  # 50-59岁年龄段的数据列表
+            '60-69': [],  # 60-69岁年龄段的数据列表
+            '70-79': [],  # 70-79岁年龄段的数据列表
+            '80+': []     # 80岁及以上年龄段的数据列表
+        }
+        
+        # 遍历所有记录，解密年龄并按年龄段分组
+        for record in records:
+            if record.age is not None and getattr(record, field_name) is not None:
+                # 解密年龄
+                decrypted_age = service.encryptor.decrypt(
+                    service.encryptor.public_key.encrypt(0).__class__(
+                        service.encryptor.public_key, int(record.age)
+                    )
+                )
+                
+                # 获取指定字段的密文
+                field_ciphertext = getattr(record, field_name)
+                
+                # 根据年龄分组
+                if 0 <= decrypted_age < 10:
+                    age_groups['0-9'].append(field_ciphertext)  # 添加到0-9岁组
+                elif 10 <= decrypted_age < 20:
+                    age_groups['10-19'].append(field_ciphertext)  # 添加到10-19岁组
+                elif 20 <= decrypted_age < 30:
+                    age_groups['20-29'].append(field_ciphertext)  # 添加到20-29岁组
+                elif 30 <= decrypted_age < 40:
+                    age_groups['30-39'].append(field_ciphertext)  # 添加到30-39岁组
+                elif 40 <= decrypted_age < 50:
+                    age_groups['40-49'].append(field_ciphertext)  # 添加到40-49岁组
+                elif 50 <= decrypted_age < 60:
+                    age_groups['50-59'].append(field_ciphertext)  # 添加到50-59岁组
+                elif 60 <= decrypted_age < 70:
+                    age_groups['60-69'].append(field_ciphertext)  # 添加到60-69岁组
+                elif 70 <= decrypted_age < 80:
+                    age_groups['70-79'].append(field_ciphertext)  # 添加到70-79岁组
+                else:
+                    age_groups['80+'].append(field_ciphertext)  # 添加到80岁及以上组
+        
+        # 计算每个年龄段的平均值
+        result = {}  # 初始化结果字典
+        for age_group, ciphertexts in age_groups.items():
+            if ciphertexts:  # 如果该年龄段有数据
+                # 使用average_encrypted_data方法计算平均值（替换原来的average_encrypted_list方法）
+                avg = service.average_encrypted_data(ciphertexts)  # 使用average_encrypted_data方法
+                
+                # 如果是BMI或LDL字段，将结果除以FLOAT_PRECISION
+                if field_name in ['BMI', 'LDL'] and avg is not None:
+                    avg = avg / FLOAT_PRECISION  # 将结果除以FLOAT_PRECISION(10)
+                    print(f"{age_group}年龄段的{field_name}平均值(已除以{FLOAT_PRECISION}): {avg}")  # 打印调整后的结果
+                
+                result[age_group] = avg  # 存储结果
+            else:
+                result[age_group] = None  # 如果没有数据，设为None
         
         # 如果结果为空，返回错误信息
         if not result:

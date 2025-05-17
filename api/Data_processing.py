@@ -1,14 +1,13 @@
 from flask import request, jsonify
 from service.analyse import AnalyseService  # 导入分析服务类
-from models import Analysis_result  # 导入Analysis_result模型
-
-def data_processing():  # 定义数据处理接口
-    try:
-        analyse_service = AnalyseService()  # 创建分析服务实例
-        average_age = analyse_service.average_encrypted_data('age')  # 计算age字段的平均值
-        return jsonify({'code': 200, 'data': average_age})  # 返回平均值
-    except Exception as e:
-        return jsonify({'code': 500, 'msg': f'服务器内部错误: {str(e)}'})  # 返回错误信息
+from models import Analysis_result,Shuju2  # 导入Analysis_result模型
+from db_config import db  # 导入数据库配置
+import traceback  # 导入traceback模块
+from models import UserData  # 导入UserData模型
+from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
+from config import FLOAT_PRECISION  # 导入浮点精度配置
+from sqlalchemy.exc import OperationalError  # 导入OperationalError异常
+import time  # 导入time模块，用于延时重试
 
 def privacy_intersection():  # 定义隐私求交接口
     """
@@ -33,27 +32,141 @@ def privacy_intersection():  # 定义隐私求交接口
         existing_result = Analysis_result.query.filter_by(id=data_id).first()
         
         if existing_result:  # 如果已有分析结果
-            # 返回错误信息，说明已有结果
+            # 计算平均相似度
+            fields = ['cirrhosis', 'age', 'sex', 'cholesterol', 'triglyceride', 
+                     'HDL', 'LDL', 'PathDiagNum', 'BMI', 'ALT', 'AST', 'glucose']
+            
+            # 获取所有字段的相似度值
+            similarity_values = [getattr(existing_result, field) for field in fields]
+            
+            # 计算平均相似度
+            avg_similarity = sum(similarity_values) / len(fields)
+            
+            # 返回已有结果
             return jsonify({
-                'code': 400,  # 状态码
-                'msg': f'ID为{data_id}的数据已有分析结果，无需重复分析'  # 错误信息
+                'code': 200,  # 状态码
+                'data': round(avg_similarity, 2),  # 交集占比（平均相似度）
+                'msg': f'ID为{data_id}的数据已有分析结果，平均相似度为{avg_similarity:.2f}%'  # 成功信息
             })
         
-        # 如果没有已有分析结果，则调用隐私求交方法进行分析
-        analyse_service = AnalyseService()  # 创建分析服务实例
-        percentage = analyse_service.privacy_preserving_intersection(data_id)  # 计算交集占比
+        # 如果没有已有分析结果，则进行隐私求交分析
         
-        # 返回结果
+        
+        # 2. 查询目标记录
+        target_record = Shuju2.query.filter_by(id=data_id).first()  # 获取指定ID的记录
+        if not target_record:  # 如果没有找到记录
+            return jsonify({
+                'code': 404,  # 状态码
+                'msg': f'没有找到ID为{data_id}的记录'  # 错误信息
+            })
+        
+        # 3. 查询所有记录
+        all_records = Shuju2.query.all()  # 获取所有记录
+        if not all_records:  # 如果没有记录
+            return jsonify({
+                'code': 404,  # 状态码
+                'msg': '没有找到任何记录'  # 错误信息
+            })
+        
+        # 4. 创建分析服务实例
+        analyse_service = AnalyseService()  # 创建分析服务实例
+        
+        # 5. 定义需要比较的字段
+        fields = ['cirrhosis', 'age', 'sex', 'cholesterol', 'triglyceride', 
+                 'HDL', 'LDL', 'PathDiagNum', 'BMI', 'ALT', 'AST', 'glucose']  # 所有需要比较的字段
+        
+        # 6. 定义需要完全匹配的字段
+        exact_match_fields = ['sex', 'cirrhosis', 'PathDiagNum'] 
+        
+        # 7. 初始化各字段的交集百分比
+        intersection_percentages = {}
+        
+        # 8. 对每个字段进行隐私求交
+        for field in fields:
+            # 获取目标记录的字段值
+            print(f"field: {field}开始隐私求交")  # 打印字段名
+            target_value = getattr(target_record, field)
+            
+            # 获取所有记录的该字段值列表
+            all_values = [getattr(record, field) for record in all_records if record.id != data_id]
+            
+            # 根据字段类型选择匹配方法
+            if field in exact_match_fields:
+                # 完全匹配
+                percentage = analyse_service.privacy_preserving_exact_match(target_value, all_values)
+            elif field in ['LDL', 'BMI']:
+                # 模糊匹配，带精度因子
+                from config import FLOAT_PRECISION  # 导入浮点精度配置
+                percentage = analyse_service.privacy_preserving_fuzzy_match(target_value, all_values, FLOAT_PRECISION)
+            else:
+                # 模糊匹配，不带精度因子
+                percentage = analyse_service.privacy_preserving_fuzzy_match(target_value, all_values)
+            
+            # 存储该字段的交集百分比
+            intersection_percentages[field] = percentage
+        
+        # 9. 计算平均百分比
+        avg_percentage = sum(intersection_percentages.values()) / len(intersection_percentages)
+        
+        # 10. 将结果存入Analysis_result表
+        result = Analysis_result(  # 创建Analysis_result实例
+            id=data_id,  # 使用传入参数的id
+            cirrhosis=intersection_percentages['cirrhosis'],  # 肝硬化字段百分比
+            age=intersection_percentages['age'],  # 年龄字段百分比
+            sex=intersection_percentages['sex'],  # 性别字段百分比
+            cholesterol=intersection_percentages['cholesterol'],  # 胆固醇字段百分比
+            triglyceride=intersection_percentages['triglyceride'],  # 甘油三酯字段百分比
+            HDL=intersection_percentages['HDL'],  # 高密度脂蛋白字段百分比
+            LDL=intersection_percentages['LDL'],  # 低密度脂蛋白字段百分比
+            PathDiagNum=intersection_percentages['PathDiagNum'],  # 病理诊断编号字段百分比
+            BMI=intersection_percentages['BMI'],  # 体重指数字段百分比
+            ALT=intersection_percentages['ALT'],  # 谷丙转氨酶字段百分比
+            AST=intersection_percentages['AST'],  # 谷草转氨酶字段百分比
+            glucose=intersection_percentages['glucose']  # 血糖字段百分比
+        )
+        
+        # 添加到数据库会话并提交（带重试机制）
+        max_retries = 3  # 最大重试次数
+        retry_count = 0  # 当前重试次数
+        
+        while retry_count < max_retries:  # 当重试次数小于最大重试次数时循环
+            try:
+                db.session.add(result)  # 添加到会话
+                db.session.commit()  # 提交到数据库
+                print(f"分析结果已保存到analysis_result表，ID: {result.id}")  # 打印保存成功信息
+                break  # 成功后跳出循环
+            except OperationalError as e:  # 捕获数据库操作异常
+                retry_count += 1  # 重试次数加1
+                print(f"数据库连接错误，正在进行第{retry_count}次重试...")  # 打印重试信息
+                
+                # 回滚会话
+                db.session.rollback()  # 回滚数据库会话
+                
+                # 如果不是最后一次重试，则等待后重试
+                if retry_count < max_retries:  # 如果不是最后一次重试
+                    # 重新连接数据库
+                    db.session.close()  # 关闭当前会话
+                    db.engine.dispose()  # 释放所有连接池中的连接
+                    
+                    # 等待一段时间再重试
+                    time.sleep(2 * retry_count)  # 等待时间随重试次数增加
+                else:
+                    # 最后一次重试失败，抛出异常
+                    raise Exception(f"数据库连接错误，重试{max_retries}次后仍然失败: {str(e)}")  # 抛出异常
+        
+        # 11. 返回结果
         return jsonify({
             'code': 200,  # 状态码
-            'data': percentage,  # 交集占比
-            'msg': f'分析成功，ID为{data_id}的数据与其他数据的平均相似度为{percentage:.2f}%'  # 成功信息
+            'data': round(avg_percentage, 2),  # 交集占比
+            'msg': f'分析成功，ID为{data_id}的数据与其他数据的平均相似度为{avg_percentage:.2f}%'  # 成功信息
         })
         
     except Exception as e:  # 捕获异常
         # 记录错误信息
-        import traceback  # 导入traceback模块
         traceback.print_exc()  # 打印详细错误信息
+        
+        # 回滚数据库会话
+        db.session.rollback()  # 回滚数据库会话
         
         # 返回错误响应
         return jsonify({
@@ -84,8 +197,7 @@ def get_data_analysis_result():
                 'msg': '缺少用户ID参数'
             })  # 返回错误信息
         
-        # 根据user_id查询user_data表获取data_id
-        from models import UserData  # 导入UserData模型
+        
         user_data_records = UserData.query.filter_by(user_id=user_id).all()  # 查询用户数据记录
         
         if not user_data_records:  # 如果没有找到用户数据记录
@@ -100,13 +212,11 @@ def get_data_analysis_result():
         # 初始化结果列表
         result_list = []
         
-        # 创建加密器实例
-        from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
+
         encryptor = PaillierEncryptor()  # 创建加密器实例
         
-        # 导入配置和模型
-        from config import FLOAT_PRECISION  # 导入浮点精度配置
-        from models import Shuju2, Analysis_result  # 导入Shuju2和Analysis_result模型
+       
+        
         
         # 遍历每个data_id，获取原始数据和分析结果
         for data_id in data_ids:
@@ -191,7 +301,6 @@ def get_data_analysis_result():
         
     except Exception as e:  # 捕获异常
         # 记录错误信息
-        import traceback  # 导入traceback模块
         traceback.print_exc()  # 打印详细错误信息
         
         # 返回错误响应
