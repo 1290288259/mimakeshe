@@ -12,7 +12,7 @@ from api.updata import updata  # 导入updata路由
 from api.Data_processing import  privacy_intersection ,get_data_analysis_result# 导入数据处理接口
 from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages
 from config import FLOAT_PRECISION  # 从config.py导入全局变量
-from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,get_avg_by_age_group# 导入数据处理接口
+from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,calculate_and_store_age_group_avg, get_age_group_avg_from_db # 导入数据处理接口
 from api.test import run_all_tests, run_average_test, run_exact_match_test_api, run_fuzzy_match_test_api
 
 # 创建Flask应用实例
@@ -56,8 +56,10 @@ app.route('/data/calculate_avg', methods=['GET'])(calculate_avg)
 app.route('/data/get_avg', methods=['GET'])(get_avg)
 # 注册获取所有用户的年龄路由
 app.route('/data/getallavg', methods=['GET'])(get_all_age_data)
-# 注册所有用户年龄段对应字段平均值路由
-app.route('/data/get_avg_by_age_group', methods=['GET'])(get_avg_by_age_group)
+# 注册计算所有用户年龄段对应字段平均值路由
+app.route('/data/calculate_and_store_age_group_avg', methods=['GET'])(calculate_and_store_age_group_avg)
+# 注册获取所有用户年龄段对应字段平均值路由
+app.route('/data/get_age_group_avg_from_db', methods=['GET'])(get_age_group_avg_from_db)
 # 注册隐私求交路由
 app.route('/data/privacy_intersection', methods=['GET'])(privacy_intersection)
 # 注册获取隐私求交结果路由

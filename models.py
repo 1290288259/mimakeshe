@@ -1,5 +1,5 @@
 from db_config import db
-from datetime import datetime
+from datetime import datetime, timezone, timedelta # 导入timezone和timedelta
 
 class User(db.Model):
     """
@@ -205,7 +205,11 @@ class Avg(db.Model):
     ALT = db.Column(db.Float)            # 谷丙转氨酶字段平均值
     AST = db.Column(db.Float)            # 谷草转氨酶字段平均值
     glucose = db.Column(db.Float)        # 血糖字段平均值
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # 存入时间，自动记录
+   # 强制存储北京时间（UTC+8）
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    ) 
 
     def __repr__(self):
         """返回平均值对象的字符串表示"""
@@ -247,10 +251,36 @@ class Analysis_result(db.Model):
     ALT = db.Column(db.Float)            # 谷丙转氨酶，浮点型
     AST = db.Column(db.Float)            # 谷草转氨酶，浮点型
     glucose = db.Column(db.Float)        # 血糖，浮点型
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # 创建时间，自动记录当前时间
+    # 强制存储北京时间（UTC+8）
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    )
     
     def __repr__(self):
         """返回分析结果对象的字符串表示"""
         return f'<Analysis_result id={self.id}>'
     
     
+class AgeGroupAvg(db.Model):
+    __tablename__ = 'age_group_avg'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True) # 主键，自动递增
+    field_name = db.Column(db.String(50), unique=True, nullable=False) # 字段名称，非空且唯一
+    age_0_9 = db.Column(db.Float)    # 0-9岁年龄段平均值
+    age_10_19 = db.Column(db.Float)  # 10-19岁年龄段平均值
+    age_20_29 = db.Column(db.Float)  # 20-29岁年龄段平均值
+    age_30_39 = db.Column(db.Float)  # 30-39岁年龄段平均值
+    age_40_49 = db.Column(db.Float)  # 40-49岁年龄段平均值
+    age_50_59 = db.Column(db.Float)  # 50-59岁年龄段平均值
+    age_60_69 = db.Column(db.Float)  # 60-69岁年龄段平均值
+    age_70_79 = db.Column(db.Float)  # 70-79岁年龄段平均值
+    age_80_plus = db.Column(db.Float) # 80岁及以上年龄段平均值
+    # 强制存储北京时间（UTC+8）
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    )
+
+    def __repr__(self):
+        return f'<AgeGroupAvg {self.field_name}>'
