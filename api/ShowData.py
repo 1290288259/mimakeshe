@@ -158,19 +158,19 @@ def getEncryptedData():
         for shuju2, user_id_result in results:
             decrypted_record = {
                 'id': shuju2.id,
-                'user_id': user_id_value,
-                'cirrhosis': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.cirrhosis))),
-                'age': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.age))),
-                'sex': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.sex))),
-                'cholesterol': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.cholesterol))),
-                'triglyceride': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.triglyceride))),
-                'HDL': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.HDL))),
-                'LDL': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.LDL))) / FLOAT_PRECISION,
-                'PathDiagNum': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.PathDiagNum))),
-                'BMI': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.BMI))) / FLOAT_PRECISION,
-                'ALT': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.ALT))),
-                'AST': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.AST))),
-                'glucose': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.glucose)))
+                'user_id': user_id_result, # 将 user_id_value 修正为 user_id_result
+                'cirrhosis': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.cirrhosis))), # 解密肝硬化数据
+                'age': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.age))), # 解密年龄数据
+                'sex': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.sex))), # 解密性别数据
+                'cholesterol': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.cholesterol))), # 解密胆固醇数据
+                'triglyceride': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.triglyceride))), # 解密甘油三酯数据
+                'HDL': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.HDL))), # 解密高密度脂蛋白数据
+                'LDL': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.LDL))) / FLOAT_PRECISION, # 解密低密度脂蛋白数据
+                'PathDiagNum': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.PathDiagNum))), # 解密病理诊断编号数据
+                'BMI': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.BMI))) / FLOAT_PRECISION, # 解密体重指数数据
+                'ALT': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.ALT))), # 解密谷丙转氨酶数据
+                'AST': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.AST))), # 解密谷草转氨酶数据
+                'glucose': encryptor.decrypt(encryptor.public_key.encrypt(0).__class__(encryptor.public_key, int(shuju2.glucose))) # 解密血糖数据
             }
             decrypted_data.append(decrypted_record)
             

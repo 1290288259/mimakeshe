@@ -15,7 +15,7 @@
         <el-table-column prop="user_id" label="用户ID" width="100" />
         <el-table-column prop="cirrhosis" label="肝硬化" width="80" />
         <el-table-column prop="age" label="年龄" width="80" />
-        <el-table-column prop="sex" label="性别" width="80" />
+        <el-table-column prop="sex" label="性别" width="80" :formatter="formatSex" /> <!-- 添加 formatter 属性 -->
         <el-table-column prop="cholesterol" label="胆固醇" width="100" />
         <el-table-column prop="triglyceride" label="甘油三酯" width="100" />
         <el-table-column prop="HDL" label="高密度脂蛋白" width="110" />
@@ -54,7 +54,10 @@
             <el-input v-model="editForm.age" />
           </el-form-item>
           <el-form-item label="性别">
-            <el-input v-model="editForm.sex" />
+            <el-radio-group v-model="editForm.sex"> <!-- 将el-input替换为el-radio-group -->
+              <el-radio :label="1">男性</el-radio>
+              <el-radio :label="2">女性</el-radio>
+            </el-radio-group>
           </el-form-item>
           <el-form-item label="胆固醇">
             <el-input v-model="editForm.cholesterol" />
@@ -201,6 +204,16 @@ export default {
         this.fetchAllData();
       }
     }, // 这里加上逗号
+    // 格式化性别显示
+    formatSex(row, column, cellValue) {
+      if (cellValue === 1) {
+        return '男性';
+      } else if (cellValue === 2) {
+        return '女性';
+      } else {
+        return ''; // 或者其他默认值
+      }
+    },
     // 编辑按钮事件，弹出编辑框并填充表单
     handleEdit(row) {
       this.editForm = { ...row }; // 将当前行数据赋值到表单

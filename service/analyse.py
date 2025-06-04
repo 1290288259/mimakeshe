@@ -7,15 +7,13 @@ class AnalyseService:  # 定义分析服务类
     def __init__(self):  # 初始化方法
         self.encryptor = PaillierEncryptor()  # 创建Paillier加密器实例
 
-    def sum_encrypted_data(self, field):  # 对指定字段的密文求和并解密返回结果
+    def sum_encrypted_data(self, encrypted_data_list):  # 对指定加密数据列表的密文求和并解密返回结果
         try:  # 尝试执行以下代码
-            records = Shuju2.query.with_entities(getattr(Shuju2, field)).all()  # 查询指定字段的所有记录
-            if not records:  # 如果没有记录
+            if not encrypted_data_list:  # 如果列表为空
                 return 0  # 返回0
             total = self.encryptor.encrypt(0)  # 初始化总和为加密的0
-            for record in records:  # 遍历所有记录
-                ciphertext = int(record[0])  # 获取密文
-                encrypted_number = self.encryptor.public_key.encrypt(0).__class__(self.encryptor.public_key, ciphertext)  # 将密文转换为EncryptedNumber对象
+            for ciphertext in encrypted_data_list:  # 遍历所有密文
+                encrypted_number = self.encryptor.public_key.encrypt(0).__class__(self.encryptor.public_key, int(ciphertext))  # 将密文转换为EncryptedNumber对象
                 total += encrypted_number  # 累加密文
             return self.encryptor.decrypt(total)  # 解密并返回总和
         except Exception as e:  # 捕获异常
@@ -24,7 +22,7 @@ class AnalyseService:  # 定义分析服务类
 
     def average_encrypted_data(self, encrypted_data):  
         """
-        计算指定字段的加密数据平均值
+        计算指定列表的加密数据平均值
         参数:
             encrypted_data: 要计算平均值的加密数据列表
         返回:
@@ -40,26 +38,12 @@ class AnalyseService:  # 定义分析服务类
             if record_count == 0:  # 如果没有记录
                 return 0  # 返回0
                 
-            # 初始化总和为加密的0
-            total = self.encryptor.encrypt(0)  # 初始化总和为加密的0
+            # 调用 sum_encrypted_data 函数来获取总和
+            decrypted_total = self.sum_encrypted_data(encrypted_data)  # 调用求和函数
             
-            # 记录处理进度
-            processed = 0
-            
-            # 处理所有数据
-            for ciphertext in encrypted_data:
-                # 将密文转换为EncryptedNumber对象
-                encrypted_number = self.encryptor.public_key.encrypt(0).__class__(
-                    self.encryptor.public_key, int(ciphertext))  # 将密文转换为EncryptedNumber对象
-                total += encrypted_number  # 累加密文
-                processed += 1
-                
-                # 每处理50条记录打印一次进度
-                if processed % 50 == 0:
-                    print(f"已处理: {processed}/{record_count} ({processed*100/record_count:.1f}%)")
-            
-            # 解密并计算平均值
-            decrypted_total = self.encryptor.decrypt(total)  # 解密最终总和
+            if decrypted_total is None: # 如果求和失败
+                return None # 返回None
+
             average = decrypted_total / record_count  # 计算平均值
             print(f"平均值计算完成: {average}")  # 打印计算结果
             return average  # 返回平均值
