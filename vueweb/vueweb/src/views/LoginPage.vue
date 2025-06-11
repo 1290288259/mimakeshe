@@ -68,6 +68,30 @@ export default {
       dialogVisible: false,
     };
   },
+  mounted() {
+    // 组件挂载时，为html和body添加背景样式
+    document.documentElement.style.height = '100%';
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.backgroundImage = "url('" + require('@/assets/beijing.png') + "')";
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundRepeat = 'no-repeat';
+    document.body.style.backgroundAttachment = 'fixed';
+  },
+  beforeUnmount() {
+    // 组件卸载前，移除html和body的背景样式
+    document.documentElement.style.height = '';
+    document.body.style.height = '';
+    document.body.style.margin = '';
+    document.body.style.padding = '';
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundSize = '';
+    document.body.style.backgroundPosition = '';
+    document.body.style.backgroundRepeat = '';
+    document.body.style.backgroundAttachment = '';
+  },
   methods: {
     // 登录方法
     login() {
@@ -144,12 +168,27 @@ export default {
 }
 };
 </script>
+
+<!-- 全局样式，不带scoped属性，作用于整个页面 -->
+<style>
+/* 设置html和body的高度为100%，确保背景覆盖整个页面 */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+
+</style>
+
 <style scoped>
 .login-container {
-  max-width: 400px;
-  margin: 50px auto;
+  /* 移除 max-width，让其可以根据内容自适应或设置为100% */
+  /* max-width: 400px; */
+  width: 400px; /* 设置固定宽度，或者根据需要调整 */
   padding: 40px;
-  background: linear-gradient(135deg, #3498db, #8e44ad); /* 渐变背景 */
+  background: rgba(8, 7, 105, 0.8); /* 半透明白色背景，让壁纸透出来 */
   border-radius: 12px; /* 圆角效果 */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* 添加阴影 */
   display: flex;
@@ -157,13 +196,19 @@ export default {
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #fff;
+  color: #eaeaf5; /* 将文字颜色改为深蓝色 */
+
+  /* 实现全屏居中 */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 h2 {
   font-size: 28px;
   font-weight: bold;
-  color: #fff;
+  color: #dddde0; /* 将文字颜色改为深蓝色 */
   margin-bottom: 30px;
   letter-spacing: 1px;
 }

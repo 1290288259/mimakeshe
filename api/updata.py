@@ -10,8 +10,17 @@ def updata():
     data = request.get_json()
     print("接收到的数据:", data)
 
-    # 将数据转换为浮点型
-    float_data = {key: float(value) if key != 'user_id' else value for key, value in data.items()}
+    # 新增：获取 group_id，如果前端没有传递，可以设置一个默认值，例如 1
+    group_id = data.get('group_id', 1) # 从请求数据中获取 group_id，默认为 1
+    try:
+        group_id = int(group_id) # 尝试将 group_id 转换为整数
+        if group_id <= 0: # 确保 group_id 是正整数
+            return jsonify({'code': 400, 'msg': 'group_id 必须是正整数'}), 400
+    except ValueError:
+        return jsonify({'code': 400, 'msg': 'group_id 必须是整数'}), 400
+
+    # 将数据转换为浮点型，同时处理 user_id 和 group_id
+    float_data = {key: float(value) if key not in ['user_id', 'group_id'] else value for key, value in data.items()}
     print("转换后的数据:", float_data)
 
     # 定义数据范围
@@ -32,7 +41,7 @@ def updata():
 
     # 检查数据是否为空且符合范围
     for key, value in data.items():
-        if key == 'user_id':  # 跳过user_id
+        if key in ['user_id', 'group_id']:  # 跳过user_id和group_id的范围检查
             continue
         if key not in ranges:
             return jsonify({
@@ -70,23 +79,26 @@ def updata():
             BMI=data['BMI'],
             ALT=data['ALT'],
             AST=data['AST'],
-            glucose=data['glucose']
+            glucose=data['glucose'],
+            group_id=group_id  # 新增：存入 group_id
         )
         db.session.add(new_record)
 
         # 将user_id和data_id存入user_data表
         user_data_record = UserData(
             user_id=data['user_id'],
-            data_id=data_id
+            data_id=data_id,
         )
         db.session.add(user_data_record)
 
-        db.session.commit()
-        print("数据成功存入shuju表和user_data表")
+        # db.session.commit() # 暂时注释掉，等待shuju2也成功后再一起提交
+        # print("数据成功存入shuju表和user_data表")
         
 
-        # 加密数据并存入shuju2表
-        encryptor = PaillierEncryptor()  # 创建Paillier加密器实例
+        # 根据 group_id 初始化Paillier加密器以加载对应的密钥
+        encryptor = PaillierEncryptor()  # 创建 PaillierEncryptor 实例，此时会默认加载密钥对1
+        encryptor.load_or_generate_keypair(index=group_id) # 根据 group_id 加载指定的密钥对
+        
         encrypted_data = {  # 加密所有数据字段
             'cirrhosis': str(encryptor.encrypt(int(float_data['cirrhosis'])).ciphertext()),  # 加密肝硬化数据
             'age': str(encryptor.encrypt(int(float_data['age'])).ciphertext()),  # 加密年龄数据
@@ -114,11 +126,13 @@ def updata():
             BMI=encrypted_data['BMI'],  # 存入加密的BMI数据
             ALT=encrypted_data['ALT'],  # 存入加密的谷丙转氨酶数据
             AST=encrypted_data['AST'],  # 存入加密的谷草转氨酶数据
-            glucose=encrypted_data['glucose']  # 存入加密的血糖数据
+            glucose=encrypted_data['glucose'],  # 存入加密的血糖数据
+            group_id=group_id  # 新增：存入 group_id
         )
         db.session.add(new_encrypted_record)  # 将加密数据记录添加到数据库会话
-        db.session.commit()  # 提交数据库会话
-        print("加密数据成功存入shuju2表")  # 打印成功信息
+        
+        db.session.commit()  # 统一提交所有更改
+        print("数据成功存入shuju, user_data 和 shuju2表")  # 打印成功信息
 
         
 # 解密之前存入的加密数据并返回前端

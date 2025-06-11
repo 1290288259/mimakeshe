@@ -1,6 +1,18 @@
 <template>
   <div class="form-container">
     <el-form :model="form" label-width="210px">
+      <!-- 新增：选择密钥对 (group_id) -->
+      <el-form-item label="选择加密密钥组 (group_id)">
+        <el-select v-model="groupId" placeholder="请选择密钥组">
+          <el-option
+            v-for="keypair in keypairNames"
+            :key="keypair.id"
+            :label="keypair.label"
+            :value="keypair.id">
+          </el-option>
+        </el-select>
+      </el-form-item>
+
       <el-form-item label="肝硬化（cirrhosis）">
         <el-input v-model="form.cirrhosis" placeholder="无肝硬化：0，有肝硬化：1" />
       </el-form-item>
@@ -71,7 +83,9 @@ export default {
         AST: '',
         glucose: ''
       },
-      userId: '' // 新增userId字段
+      userId: '', // 用户ID
+      groupId: 1, // 新增：选择的密钥组ID，默认为1
+      keypairNames: [] // 新增：存储密钥对名称的数组
     };
   },
   created() {
@@ -81,10 +95,41 @@ export default {
       let user = JSON.parse(userStr);
       this.userId = user.user_id; // 设置userId
     }
+    this.fetchKeypairNames(); // 新增：页面创建时获取密钥对名称
   },
   methods: {
+    // 新增：获取密钥对名称列表的方法
+    async fetchKeypairNames() {
+      try {
+        const res = await axios.get('/get_keypair_names'); // 调用ShowData.py中的接口
+        if (res.data.code === 200) {
+          this.keypairNames = res.data.data.map(name => {
+            const match = name.match(/\d+/); // 从文件名中提取数字作为ID，例如 private_key1.pkl -> 1
+            const id = match ? parseInt(match[0], 10) : name;
+            return {
+              id: id,
+              label: `密钥组 ${id}` // 显示为 "密钥组 X"
+            };
+          });
+          if (this.keypairNames.length > 0 && !this.keypairNames.find(k => k.id === this.groupId)) {
+            // 如果默认的groupId不在获取到的列表中，则选择第一个可用的
+            this.groupId = this.keypairNames[0].id;
+          }
+          ElMessage.success('密钥对名称加载成功');
+        } else {
+          ElMessage.error('密钥对名称加载失败: ' + res.data.msg);
+        }
+      } catch (error) {
+        ElMessage.error('密钥对名称加载失败: ' + error.message);
+        // 如果加载失败，可以提供一个默认的选项，或者禁用提交
+        this.keypairNames = [{ id: 1, label: '密钥组 1 (默认)'}, {id: 2, label: '密钥组 2'}]; // 示例默认值
+        if (!this.keypairNames.find(k => k.id === this.groupId)) {
+            this.groupId = 1;
+        }
+      }
+    },
     onSubmit() {
-      // 提交表单逻辑，包含userId
+      // 提交表单逻辑，包含userId和groupId
       const data = { 
         cirrhosis: this.form.cirrhosis.toString(),
         age: this.form.age.toString(),
@@ -98,9 +143,10 @@ export default {
         ALT: this.form.ALT.toString(),
         AST: this.form.AST.toString(),
         glucose: this.form.glucose.toString(),
-        user_id: this.userId
+        user_id: this.userId,
+        group_id: this.groupId // 新增：添加groupId到提交数据
       };
-      axios.post('/updata', data)
+      axios.post('/updata', data) // 接口名称与后端updata.py对应
         .then(response => {
           if (response.data.code === 200) {
             ElMessage.success('上传成功');
@@ -128,6 +174,7 @@ export default {
         AST: '',
         glucose: ''
       };
+      // this.groupId = 1; // 重置时也可以考虑重置groupId，如果需要的话
     }
   }
 };

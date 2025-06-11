@@ -10,7 +10,7 @@ from api.User import delete_user
 from api.User import add_user
 from api.updata import updata  # 导入updata路由
 from api.Data_processing import  privacy_intersection ,get_data_analysis_result# 导入数据处理接口
-from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages
+from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages, select_keypair, get_keypair_names ,generate_new_keypair
 from config import FLOAT_PRECISION  # 从config.py导入全局变量
 from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,calculate_and_store_age_group_avg, get_age_group_avg_from_db # 导入数据处理接口
 from api.test import run_all_tests, run_average_test, run_exact_match_test_api, run_fuzzy_match_test_api
@@ -76,6 +76,13 @@ app.route('/api/test/average', methods=['GET'])(run_average_test)
 app.route('/api/test/exact_match', methods=['GET'])(run_exact_match_test_api)
 app.route('/api/test/fuzzy_match', methods=['GET'])(run_fuzzy_match_test_api)
 
+
+# 选择密钥路由
+app.route('/select_keypair', methods=['GET'])(select_keypair)
+
+app.route('/get_keypair_names', methods=['GET'])(get_keypair_names)
+
+app.route('/generate_new_keypair', methods=['GET'])(generate_new_keypair)
 
 # 启动Flask应用
 if __name__ == '__main__':

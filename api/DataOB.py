@@ -31,8 +31,8 @@ def calculate_avg():
         # 单线程：依次计算每个字段的平均值
         for field in numeric_fields:
             try:
-                # 查询记录总数
-                record_count = Shuju2.query.count()
+                # 查询记录总数，只计算group_id=1的数据
+                record_count = Shuju2.query.filter_by(group_id=1).count()
                 print(f"{field}字段的总记录数: {record_count}")
                 
                 if record_count == 0:  # 如果没有记录
@@ -43,10 +43,10 @@ def calculate_avg():
                 batch_size = 50  # 每批处理50条记录
                 encrypted_data = []  # 存储加密数据
                 
-                # 分批查询数据
+                # 分批查询数据，只查询group_id=1的数据
                 for offset in range(0, record_count, batch_size):
                     # 查询一批数据
-                    batch = Shuju2.query.with_entities(
+                    batch = Shuju2.query.filter_by(group_id=1).with_entities(
                         getattr(Shuju2, field)
                     ).limit(batch_size).offset(offset).all()
                     
@@ -165,8 +165,8 @@ def get_all_age_data():
         # 创建加密器实例
         encryptor = PaillierEncryptor()
         
-        # 查询所有数据记录
-        records = Shuju2.query.all()
+        # 查询所有数据记录，只查询group_id=1的数据
+        records = Shuju2.query.filter_by(group_id=1).all()
         
         # 解密age字段数据
         decrypted_age_data = []

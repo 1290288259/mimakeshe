@@ -213,9 +213,6 @@ def get_data_analysis_result():
         result_list = []
         
 
-        encryptor = PaillierEncryptor()  # 创建加密器实例
-        
-       
         
         
         # 遍历每个data_id，获取原始数据和分析结果
@@ -223,9 +220,14 @@ def get_data_analysis_result():
             # 查询shuju2表获取密文数据
             encrypted_record = Shuju2.query.filter_by(id=data_id).first()  # 查询加密数据记录
             
-            if not encrypted_record:  # 如果没有找到加密数据记录
-                continue  # 跳过当前循环
-            
+            if not encrypted_record:
+                continue
+
+            # 根据group_id选择密钥对
+            # 每次循环都创建一个新的PaillierEncryptor实例，并加载对应group_id的密钥对
+            encryptor = PaillierEncryptor()  # 创建加密器实例
+            encryptor.load_or_generate_keypair(index=encrypted_record.group_id) # 根据group_id加载密钥对
+
             # 解密数据
             decrypted_data = {
                 'id': encrypted_record.id,  # 数据ID

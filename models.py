@@ -209,6 +209,7 @@ class Avg(db.Model):
     ALT = db.Column(db.Float)            # 谷丙转氨酶字段平均值
     AST = db.Column(db.Float)            # 谷草转氨酶字段平均值
     glucose = db.Column(db.Float)        # 血糖字段平均值
+    group_id = db.Column(db.Integer, default=1) # 新增 group_id 字段，默认值为 1
    # 强制存储北京时间（UTC+8）
     created_at = db.Column(
         db.DateTime,
@@ -280,6 +281,7 @@ class AgeGroupAvg(db.Model):
     age_60_69 = db.Column(db.Float)  # 60-69岁年龄段平均值
     age_70_79 = db.Column(db.Float)  # 70-79岁年龄段平均值
     age_80_plus = db.Column(db.Float) # 80岁及以上年龄段平均值
+    group_id = db.Column(db.Integer, default=1) # 新增 group_id 字段，默认值为 1
     # 强制存储北京时间（UTC+8）
     created_at = db.Column(
         db.DateTime,

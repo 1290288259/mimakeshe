@@ -10,6 +10,31 @@
         </div>
       </div>
 
+      <!-- 密钥操作区域 -->
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <!-- 选择已有密钥 -->
+        <el-select v-model="selectedKeyIndex" placeholder="选择密钥" style="width: 140px; margin-right: 10px;">
+          <el-option
+            v-for="keypair in keypairNames"
+            :key="keypair.id" 
+            :label="keypair.label" 
+            :value="keypair.id">
+          </el-option>
+        </el-select>
+        <el-button type="warning" @click="selectKeypair" style="margin-right: 20px;">选择密钥</el-button>
+
+        <!-- 新增密钥 -->
+        <el-select v-model="newKeyIndexToAdd" placeholder="选择新增密钥索引" style="width: 180px; margin-right: 10px;">
+          <el-option
+            v-for="item in availableNewKeyIndexes"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id">
+          </el-option>
+        </el-select>
+        <el-button type="success" @click="generateNewKeypair">新增密钥</el-button>
+      </div>
+
       <el-table :data="tableData" style="width: 100%" border>
         <el-table-column prop="id" label="ID" width="120" />
         <el-table-column prop="user_id" label="用户ID" width="100" />
@@ -138,23 +163,31 @@ export default {
         ALT: '',
         AST: '',
         glucose: ''
-      }
+      },
+      selectedKeyIndex: 1, // 当前选择的密钥索引，默认为1
+      keypairNames: [], // 存储密钥对名称的数组
+      newKeyIndexToAdd: null, // 新增：用于存储用户选择要新增的密钥的索引
+      availableNewKeyIndexes: [], // 新增：存储可供选择创建的新密钥索引
+      groupId: 1 // 新增：用于存储当前的分组ID，默认为1
     };
   },
   created() {
-    // 页面创建时加载所有数据
+    // 页面创建时加载所有数据，默认使用groupId: 1
     this.fetchAllData();
+    // 页面创建时获取密钥对名称
+    this.fetchKeypairNames();
   },
   methods: {
     // 获取所有加密数据
     async fetchAllData() {
       try {
         this.isSearchMode = false;
-        const res = await axios.get(`/data/getAllEncryptedData?page=${this.currentPage}&page_size=${this.pageSize}`);
+        // 修改API调用，增加 group_id 参数
+        const res = await axios.get(`/data/getAllEncryptedData?page=${this.currentPage}&page_size=${this.pageSize}&group_id=${this.groupId}`);
         if (res.data.code === 200) {
           this.tableData = res.data.data;
           this.total = res.data.total;
-          ElMessage.success('数据加载成功');
+          ElMessage.success(`数据加载成功 (密钥: ${this.selectedKeyIndex}, 分组: ${this.groupId})`);
         } else {
           ElMessage.error('数据加载失败: ' + res.data.msg);
         }
@@ -252,6 +285,104 @@ export default {
         this.$message.error('删除失败: ' + error.message);
       }
     },
+    // 新增：获取密钥对名称列表的方法
+    async fetchKeypairNames() {
+      try {
+        const res = await axios.get('/get_keypair_names');
+        if (res.data.code === 200) {
+          const existingKeyIds = new Set(); // 用于存储已存在的密钥ID
+          this.keypairNames = res.data.data.map(name => {
+            const match = name.match(/\d+/);
+            const id = match ? parseInt(match[0], 10) : name;
+            existingKeyIds.add(id); // 将已存在的ID添加到Set中
+            return {
+              id: id,
+              label: `密钥 ${id}`
+            };
+          });
+          ElMessage.success('密钥对名称加载成功');
+
+          // 生成可新增的密钥索引列表
+          this.availableNewKeyIndexes = [];
+          let count = 0;
+          let potentialIndex = 1;
+          while (count < 10) { // 最多生成10个可用的新密钥索引
+            if (!existingKeyIds.has(potentialIndex)) {
+              this.availableNewKeyIndexes.push({
+                id: potentialIndex,
+                label: `新增密钥 ${potentialIndex}`
+              });
+              count++;
+            }
+            potentialIndex++;
+          }
+          // 如果 availableNewKeyIndexes 为空，可以设置一个默认提示，或者让下拉框为空
+          if (this.availableNewKeyIndexes.length > 0 && !this.newKeyIndexToAdd) {
+             this.newKeyIndexToAdd = this.availableNewKeyIndexes[0].id; // 默认选中第一个可新增的
+          }
+
+        } else {
+          ElMessage.error('密钥对名称加载失败: ' + res.data.msg);
+        }
+      } catch (error) {
+        ElMessage.error('密钥对名称加载失败: ' + error.message);
+      }
+    },
+
+    // 新增：选择密钥对的方法
+    async selectKeypair() {
+      try {
+        // 根据选择的密钥更新groupId
+        if (this.selectedKeyIndex === 1) {
+          this.groupId = 1;
+        } else if (this.selectedKeyIndex === 2) {
+          this.groupId = 2;
+        } else {
+          // 对于其他密钥索引，可以设置默认的groupId或进行其他处理
+          // this.groupId = 1; // 例如，默认回到分组1
+          ElMessage.info(`当前选择了密钥 ${this.selectedKeyIndex}，groupId 逻辑未明确指定，将使用当前 groupId: ${this.groupId}`);
+        }
+
+        const res = await axios.get(`/select_keypair?key_index=${this.selectedKeyIndex}`);
+        if (res.data.code === 200) {
+          ElMessage.success(res.data.msg + `: 当前密钥信息 - ${JSON.stringify(res.data.data)}`);
+          // 密钥切换成功后，使用新的groupId刷新数据
+          this.fetchAllData();
+        } else {
+          ElMessage.error('选择密钥失败: ' + res.data.msg);
+        }
+      } catch (error) {
+        ElMessage.error('选择密钥失败: ' + error.message);
+      }
+    },
+    // 新增：生成新的密钥对的方法
+    async generateNewKeypair() {
+      // 检查是否选择了要新增的密钥索引
+      if (this.newKeyIndexToAdd === null || this.newKeyIndexToAdd === '') {
+        ElMessage.warning('请选择一个要新增的密钥索引');
+        return;
+      }
+      try {
+        // 调用后端接口生成新的密钥对，使用GET请求并通过URL参数传递key_index
+        const res = await axios.get(`/generate_new_keypair?key_index=${this.newKeyIndexToAdd}`);
+        if (res.data.code === 200) {
+          ElMessage.success(res.data.msg + ` 文件保存在: ${res.data.data.public_key_file} 和 ${res.data.data.private_key_file}`);
+          // 密钥生成成功后，重新获取密钥列表以更新下拉框
+          this.fetchKeypairNames(); 
+          // 可以考虑将 selectedKeyIndex 自动切换到新生成的密钥，或者提示用户手动选择
+          // this.selectedKeyIndex = this.newKeyIndexToAdd; // 例如，自动选中新生成的密钥
+          // this.selectKeypair(); // 并加载它
+        } else if (res.data.code === 409) { // 特别处理文件已存在的冲突情况
+          ElMessage.error('新增密钥失败: ' + res.data.msg + '，请尝试其他索引。');
+          // 文件已存在时，也刷新一下可选列表，因为可能在此期间其他操作改变了文件状态
+          this.fetchKeypairNames(); 
+        }else {
+          ElMessage.error('新增密钥失败: ' + res.data.msg);
+        }
+      } catch (error) {
+        ElMessage.error('新增密钥失败: ' + error.message);
+      }
+    }
   }
 };
 </script>
