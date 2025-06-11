@@ -7,15 +7,17 @@ class AnalyseService:  # 定义分析服务类
     def __init__(self):  # 初始化方法
         self.encryptor = PaillierEncryptor()  # 创建Paillier加密器实例
 
-    def sum_encrypted_data(self, encrypted_data_list):  # 对指定加密数据列表的密文求和并解密返回结果
+    def sum_encrypted_data(self, encrypted_data_list):  # 对指定加密数据列表的密文求和并返回密文结果
         try:  # 尝试执行以下代码
             if not encrypted_data_list:  # 如果列表为空
-                return 0  # 返回0
+                # 返回加密的0，因为求和结果是密文，所以空列表的和也应该是加密的0
+                return self.encryptor.encrypt(0)  
             total = self.encryptor.encrypt(0)  # 初始化总和为加密的0
             for ciphertext in encrypted_data_list:  # 遍历所有密文
-                encrypted_number = self.encryptor.public_key.encrypt(0).__class__(self.encryptor.public_key, int(ciphertext))  # 将密文转换为EncryptedNumber对象
+                # 将密文转换为EncryptedNumber对象，确保可以进行同态加法
+                encrypted_number = self.encryptor.public_key.encrypt(0).__class__(self.encryptor.public_key, int(ciphertext))  
                 total += encrypted_number  # 累加密文
-            return self.encryptor.decrypt(total)  # 解密并返回总和
+            return total  # 返回加密的总和
         except Exception as e:  # 捕获异常
             print(f"密文求和失败: {str(e)}")  # 打印错误信息
             return None  # 返回None
@@ -38,11 +40,14 @@ class AnalyseService:  # 定义分析服务类
             if record_count == 0:  # 如果没有记录
                 return 0  # 返回0
                 
-            # 调用 sum_encrypted_data 函数来获取总和
-            decrypted_total = self.sum_encrypted_data(encrypted_data)  # 调用求和函数
+            # 调用 sum_encrypted_data 函数来获取密文总和
+            encrypted_total = self.sum_encrypted_data(encrypted_data)  # 调用求和函数，现在返回的是密文
             
-            if decrypted_total is None: # 如果求和失败
+            if encrypted_total is None: # 如果求和失败
                 return None # 返回None
+
+            # 解密总和以计算平均值
+            decrypted_total = self.encryptor.decrypt(encrypted_total) # 解密密文总和
 
             average = decrypted_total / record_count  # 计算平均值
             print(f"平均值计算完成: {average}")  # 打印计算结果

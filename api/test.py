@@ -76,7 +76,7 @@ def run_average_calculation_test():
     test_average(encryptor, analyse_service, large_list, test_name="大数值列表平均值测试")  # 测试大数值列表的平均值计算
     
     # 返回测试结果
-    return test_results
+    return test_results 
 
 def test_average(encryptor, analyse_service, data_list, is_float=False, test_name="未命名测试"):
     """
@@ -123,15 +123,26 @@ def test_average(encryptor, analyse_service, data_list, is_float=False, test_nam
     
     # 使用加密数据计算平均值
     start_time = time.time()  # 记录开始时间
-    encrypted_avg = analyse_service.average_encrypted_data(encrypted_data)  # 计算加密数据的平均值
+    
+    # 调用 analyse_service.sum_encrypted_data 获取密文求和结果
+    encrypted_sum_result = analyse_service.sum_encrypted_data(encrypted_data) # 获取密文求和结果
+    
+    # 解密密文求和结果
+    decrypted_sum_result = encryptor.decrypt(encrypted_sum_result) # 解密密文求和结果
+    
+    # 计算加密数据的平均值
+    encrypted_avg = analyse_service.average_encrypted_data(encrypted_data)  
     
     # 如果是浮点数，需要除以精度因子
     if is_float:
         encrypted_avg = encrypted_avg / FLOAT_PRECISION
+        decrypted_sum_result = decrypted_sum_result / FLOAT_PRECISION # 如果是浮点数，解密后的求和结果也需要除以精度因子
     
     calculation_time = time.time() - start_time  # 计算平均值计算耗时
     result["计算耗时(秒)"] = round(calculation_time, 4)  # 记录计算耗时
     result["加密平均值"] = encrypted_avg  # 记录加密平均值
+    result["密文求和结果"] = str(encrypted_sum_result.ciphertext()) # 记录密文求和结果的字符串形式
+    result["解密求和结果"] = decrypted_sum_result # 记录解密后的求和结果
     
     # 比较结果
     error = abs(encrypted_avg - plaintext_avg)  # 计算误差
@@ -206,12 +217,16 @@ def run_exact_match_test():
             "加密匹配百分比": None,  # 加密匹配百分比
             "误差": None,  # 误差
             "计算耗时(秒)": None,  # 计算耗时
-            "结果": None  # 测试结果
+            "结果": None,  # 测试结果
+            "加密目标值": None, # 新增：加密的目标值
+            "加密测试数据": None # 新增：加密的测试数据
         }
         
         # 加密数据
         encrypted_target = str(encryptor.encrypt(target_value).ciphertext())  # 加密目标值
         encrypted_data = [str(encryptor.encrypt(value).ciphertext()) for value in test_data]  # 加密测试数据
+        result["加密目标值"] = encrypted_target # 记录加密目标值
+        result["加密测试数据"] = encrypted_data # 记录加密测试数据
         
         # 计算明文匹配百分比（手动计算）
         match_count = sum(1 for value in test_data if value == target_value)  # 计算匹配数量
@@ -312,12 +327,18 @@ def run_fuzzy_match_test():
             "加密匹配百分比": None,  # 加密匹配百分比
             "误差": None,  # 误差
             "计算耗时(秒)": None,  # 计算耗时
-            "结果": None  # 测试结果
+            "结果": None,  # 测试结果
+            "加密目标值": None, # 新增：加密的目标值
+            "加密测试数据": None # 新增：加密的测试数据
         }
         
         # 加密数据（注意：浮点数需要先乘以精度因子）
         encrypted_target = str(encryptor.encrypt(int(target_value * FLOAT_PRECISION)).ciphertext())  # 加密目标值
         encrypted_data = [str(encryptor.encrypt(int(value * FLOAT_PRECISION)).ciphertext()) for value in test_data]  # 加密测试数据
+        
+        # 将加密后的数据赋值给结果字典
+        result["加密目标值"] = encrypted_target
+        result["加密测试数据"] = encrypted_data
         
         # 计算明文模糊匹配百分比（手动计算，偏差在5%范围内）
         match_count = 0  # 初始化匹配计数

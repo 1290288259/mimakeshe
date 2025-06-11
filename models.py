@@ -97,6 +97,7 @@ class Shuju(db.Model):
         ALT: 谷丙转氨酶
         AST: 谷草转氨酶
         glucose: 血糖
+        group_id: 分组ID，用于数据分组
     """
     __tablename__ = 'shuju'
 
@@ -113,6 +114,7 @@ class Shuju(db.Model):
     ALT = db.Column(db.Float, nullable=False)
     AST = db.Column(db.Float, nullable=False)
     glucose = db.Column(db.Float, nullable=False)
+    group_id = db.Column(db.Integer, default=1, nullable=False)  # 新增分组字段，默认为1
 
     def __repr__(self):
         """返回数据对象的字符串表示"""
@@ -137,6 +139,7 @@ class Shuju2(db.Model):
         ALT: 谷丙转氨酶，text类型
         AST: 谷草转氨酶，text类型
         glucose: 血糖，text类型
+        group_id: 分组ID，用于数据分组
     """
     __tablename__ = 'shuju2'
 
@@ -153,6 +156,7 @@ class Shuju2(db.Model):
     ALT = db.Column(db.Text, nullable=False)
     AST = db.Column(db.Text, nullable=False)
     glucose = db.Column(db.Text, nullable=False)
+    group_id = db.Column(db.Integer, default=1, nullable=False)  # 新增分组字段，默认为1
 
     def __repr__(self):
         """返回加密数据对象的字符串表示"""

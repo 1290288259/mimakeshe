@@ -169,6 +169,29 @@
           <el-table-column prop="误差" label="误差" width="120"></el-table-column>
           <el-table-column prop="加密耗时(秒)" label="加密耗时(秒)" width="120"></el-table-column>
           <el-table-column prop="计算耗时(秒)" label="计算耗时(秒)" width="120"></el-table-column>
+          <!-- 新增密文求和结果列 -->
+          <el-table-column prop="密文求和结果" label="密文求和结果" width="180">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ scope.row['密文求和结果'] }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看密文</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <!-- 新增前端解密平均值列 -->
+          <!-- <el-table-column prop="前端解密平均值" label="前端解密平均值" width="150"></el-table-column> -->
+          <!-- 新增前端解密求和结果列 -->
+          <el-table-column prop="解密求和结果" label="解密求和结果" width="180"></el-table-column>
           <el-table-column prop="结果" label="结果" width="100">
             <template #default="scope">
               <el-tag :type="scope.row.结果 === '一致' ? 'success' : 'danger'">
@@ -187,6 +210,44 @@
           <el-table-column prop="数据类型" label="数据类型" width="100"></el-table-column>
           <el-table-column prop="数据量" label="数据量" width="100"></el-table-column>
           <el-table-column prop="目标值" label="目标值" width="100"></el-table-column>
+          <!-- 新增加密目标值列 -->
+          <el-table-column prop="加密目标值" label="加密目标值" width="180">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ scope.row['加密目标值'] }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看密文</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <!-- 新增加密测试数据列 -->
+          <el-table-column prop="加密测试数据" label="加密测试数据" width="180">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ scope.row['加密测试数据'] }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看密文</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
           <el-table-column prop="明文匹配百分比" label="明文匹配百分比" width="150"></el-table-column>
           <el-table-column prop="加密匹配百分比" label="加密匹配百分比" width="150"></el-table-column>
           <el-table-column prop="误差" label="误差" width="120"></el-table-column>
@@ -209,6 +270,44 @@
           <el-table-column prop="数据类型" label="数据类型" width="100"></el-table-column>
           <el-table-column prop="数据量" label="数据量" width="100"></el-table-column>
           <el-table-column prop="目标值" label="目标值" width="100"></el-table-column>
+          <!-- 新增加密目标值列 -->
+          <el-table-column prop="加密目标值" label="加密目标值" width="180">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ scope.row['加密目标值'] }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看密文</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <!-- 新增加密测试数据列 -->
+          <el-table-column prop="加密测试数据" label="加密测试数据" width="180">
+            <template #default="scope">
+              <el-popover
+                placement="top"
+                :width="400"
+                trigger="hover"
+              >
+                <template #default>
+                  <div style="max-height: 300px; overflow-y: auto;">
+                    <pre>{{ scope.row['加密测试数据'] }}</pre>
+                  </div>
+                </template>
+                <template #reference>
+                  <el-button type="info" size="small" plain>查看密文</el-button>
+                </template>
+              </el-popover>
+            </template>
+          </el-table-column>
           <el-table-column prop="明文匹配百分比" label="明文匹配百分比" width="150"></el-table-column>
           <el-table-column prop="加密匹配百分比" label="加密匹配百分比" width="150"></el-table-column>
           <el-table-column prop="误差" label="误差" width="120"></el-table-column>
@@ -290,6 +389,35 @@ export default {
           this.testSummary = response.data.data['测试汇总'];
           // 更新测试数据集
           this.testDatasets = response.data.data['测试数据集'];
+          
+          // 遍历测试结果，处理平均值计算的特殊数据
+          this.testResults.forEach(test => {
+            if (test['测试类型'] === '平均值计算') {
+              // 如果后端返回了密文求和结果，则赋值给前端显示
+              if (response.data.data['encrypted_sum']) {
+                test['密文求和结果'] = response.data.data['encrypted_sum'];
+              }
+              // 如果后端返回了解密后的平均值，则赋值给前端显示
+              if (response.data.data['decrypted_average']) {
+                test['前端解密平均值'] = response.data.data['decrypted_average'];
+              }
+              // 如果后端返回了解密后的求和结果，则赋值给前端显示
+              if (response.data.data['decrypted_sum_result']) {
+                test['前端解密求和结果'] = response.data.data['decrypted_sum_result'];
+              }
+            } else if (test['测试类型'] === '完全匹配' || test['测试类型'] === '模糊匹配') {
+              // 如果后端返回了加密目标值，则赋值给前端显示
+              // 这里不再需要自我赋值，因为数据应该已经包含在test对象中
+              // if (test['加密目标值']) {
+              //   test['加密目标值'] = test['加密目标值'];
+              // }
+              // 如果后端返回了加密测试数据，则赋值给前端显示
+              // 这里不再需要自我赋值，因为数据应该已经包含在test对象中
+              // if (test['加密测试数据']) {
+              //   test['加密测试数据'] = test['加密测试数据'];
+              // }
+            }
+          });
           
           // 显示成功消息
           ElMessage.success(response.data.msg || '测试执行成功');
