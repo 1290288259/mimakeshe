@@ -16,9 +16,11 @@ def calculate_avg():
         JSON响应: 包含状态码、消息和各字段平均值数据
     """
     try:
+        # 从请求中获取 group_id，如果不存在则默认为 1
+        group_id = request.args.get('group_id', type=int, default=1)
         
-        # 创建分析服务实例
-        service = AnalyseService()
+        # 创建分析服务实例，传入 group_id 以选择对应的密钥
+        service = AnalyseService(group_id=group_id)
         
         # 需要计算平均值的字段列表
         numeric_fields = ['age', 'cholesterol',
@@ -31,8 +33,8 @@ def calculate_avg():
         # 单线程：依次计算每个字段的平均值
         for field in numeric_fields:
             try:
-                # 查询记录总数，只计算group_id=1的数据
-                record_count = Shuju2.query.filter_by(group_id=1).count()
+                # 查询记录总数，只计算指定 group_id 的数据
+                record_count = Shuju2.query.filter_by(group_id=group_id).count()
                 print(f"{field}字段的总记录数: {record_count}")
                 
                 if record_count == 0:  # 如果没有记录
@@ -43,10 +45,10 @@ def calculate_avg():
                 batch_size = 50  # 每批处理50条记录
                 encrypted_data = []  # 存储加密数据
                 
-                # 分批查询数据，只查询group_id=1的数据
+                # 分批查询数据，只查询指定 group_id 的数据
                 for offset in range(0, record_count, batch_size):
                     # 查询一批数据
-                    batch = Shuju2.query.filter_by(group_id=1).with_entities(
+                    batch = Shuju2.query.filter_by(group_id=group_id).with_entities(
                         getattr(Shuju2, field)
                     ).limit(batch_size).offset(offset).all()
                     
@@ -76,7 +78,7 @@ def calculate_avg():
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                # 创建Avg对象，字段与表结构对应
+                # 创建Avg对象，字段与表结构对应，并保存 group_id
                 avg_record = Avg(
                     age=results.get('age'),
                     cholesterol=results.get('cholesterol'),
@@ -86,7 +88,8 @@ def calculate_avg():
                     BMI=results.get('BMI'),
                     ALT=results.get('ALT'),
                     AST=results.get('AST'),
-                    glucose=results.get('glucose')
+                    glucose=results.get('glucose'),
+                    group_id=group_id  # 保存 group_id
                 )
                 db.session.add(avg_record)  # 添加到会话
                 db.session.commit()         # 提交到数据库
@@ -123,12 +126,14 @@ def get_avg():
         JSON响应: 包含状态码、消息和最新一条平均值数据
     """
     try:
-        # 查询avg表中最新一条数据（按created_at倒序）
-        latest_avg = Avg.query.order_by(Avg.created_at.desc()).first()
+        # 从请求中获取 group_id，如果不存在则默认为 1
+        group_id = request.args.get('group_id', type=int, default=1)
+        # 查询avg表中最新一条指定 group_id 的数据（按created_at倒序）
+        latest_avg = Avg.query.filter_by(group_id=group_id).order_by(Avg.created_at.desc()).first()
         if latest_avg is None:
             return jsonify({
                 'code': 404,
-                'msg': '没有找到平均值数据',
+                'msg': '没有找到指定 group_id 的平均值数据',
                 'data': None
             })
         # 构造返回数据字典
@@ -162,11 +167,13 @@ def get_all_age_data():
         JSON响应: 包含状态码、消息和解密后的age数据列表
     """
     try:
-        # 创建加密器实例
+        # 从请求中获取 group_id，如果不存在则默认为 1
+        group_id = 1
+        # 创建加密器实例，传入 group_id 以选择对应的密钥
         encryptor = PaillierEncryptor()
         
-        # 查询所有数据记录，只查询group_id=1的数据
-        records = Shuju2.query.filter_by(group_id=1).all()
+        # 查询所有数据记录，只查询指定 group_id 的数据
+        records = Shuju2.query.filter_by(group_id=group_id).all()
         
         # 解密age字段数据
         decrypted_age_data = []
@@ -228,13 +235,15 @@ def calculate_and_store_age_group_avg():
             return False
 
         # 创建分析服务实例
+        # 假设 AnalyseService 默认使用 group_id=1 的密钥，或者不需要 group_id 参数
+        # 如果 AnalyseService 需要 group_id，请确保在这里传入正确的 group_id
         service = AnalyseService()
 
-        # 从数据库中查询所有记录，但只获取年龄字段和目标字段
-        records = Shuju2.query.with_entities(
+        # 从数据库中查询所有记录，但只获取年龄字段和目标字段，并只处理 group_id=1 的数据
+        records = Shuju2.query.filter_by(group_id=1).with_entities(
             Shuju2.age,
             getattr(Shuju2, field_name)
-        ).all()  # 只获取需要的两个字段
+        ).all()  # 只获取需要的两个字段，并过滤 group_id=1
 
         if not records:
             print("没有找到有效数据")
@@ -300,9 +309,9 @@ def calculate_and_store_age_group_avg():
                 # 如果是BMI或LDL字段，将结果除以FLOAT_PRECISION
                 # 确保service.FLOAT_PRECISION可用，如果FLOAT_PRECISION是全局常量，请直接使用FLOAT_PRECISION
                 # 假设 FLOAT_PRECISION 是 service 实例的一个属性
-                if field_name in ['BMI', 'LDL'] and avg is not None and hasattr(service, 'FLOAT_PRECISION'):
-                     avg = avg / service.FLOAT_PRECISION  # 将结果除以FLOAT_PRECISION
-                     print(f"{age_group}年龄段的{field_name}平均值(已除以{service.FLOAT_PRECISION}): {avg}")  # 打印调整后的结果
+                if field_name in ['BMI', 'LDL'] and avg is not None:
+                     avg = avg / FLOAT_PRECISION  # 将结果除以全局的FLOAT_PRECISION
+                     print(f"{age_group}年龄段的{field_name}平均值(已除以{FLOAT_PRECISION}): {avg}")  # 打印调整后的结果
 
                 calculated_result[age_group] = avg  # 存储计算结果
             else:

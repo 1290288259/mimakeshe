@@ -4,8 +4,10 @@ from db_config import db  # 导入数据库配置
 FLOAT_PRECISION = 10
 
 class AnalyseService:  # 定义分析服务类
-    def __init__(self):  # 初始化方法
-        self.encryptor = PaillierEncryptor()  # 创建Paillier加密器实例
+    def __init__(self, group_id=1):  # 初始化方法，接受 group_id 参数，默认为1
+        # 创建Paillier加密器实例，并根据 group_id 加载或生成密钥对
+        self.encryptor = PaillierEncryptor()
+        self.encryptor.load_or_generate_keypair(group_id)
 
     def sum_encrypted_data(self, encrypted_data_list):  # 对指定加密数据列表的密文求和并返回密文结果
         try:  # 尝试执行以下代码

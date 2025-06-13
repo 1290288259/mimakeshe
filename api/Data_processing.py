@@ -60,16 +60,19 @@ def privacy_intersection():  # 定义隐私求交接口
                 'msg': f'没有找到ID为{data_id}的记录'  # 错误信息
             })
         
-        # 3. 查询所有记录
-        all_records = Shuju2.query.all()  # 获取所有记录
+        # 获取目标记录的 group_id
+        target_group_id = target_record.group_id
+
+        # 3. 查询所有记录 (只查询与目标记录相同 group_id 的数据)
+        all_records = Shuju2.query.filter_by(group_id=target_group_id).all()  # 获取所有相同 group_id 的记录
         if not all_records:  # 如果没有记录
             return jsonify({
                 'code': 404,  # 状态码
                 'msg': '没有找到任何记录'  # 错误信息
             })
         
-        # 4. 创建分析服务实例
-        analyse_service = AnalyseService()  # 创建分析服务实例
+        # 4. 创建分析服务实例，传入目标记录的 group_id
+        analyse_service = AnalyseService(group_id=target_group_id)  # 创建分析服务实例，并传入 group_id
         
         # 5. 定义需要比较的字段
         fields = ['cirrhosis', 'age', 'sex', 'cholesterol', 'triglyceride', 
