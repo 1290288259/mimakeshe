@@ -16,5 +16,13 @@ export default {
 </script>
 
 <style>
-
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 防止body出现滚动条，交由内部容器滚动 */
+}
+#app {
+  height: 100%;
+}
 </style>

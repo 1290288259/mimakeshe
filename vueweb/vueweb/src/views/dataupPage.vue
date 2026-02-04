@@ -103,29 +103,21 @@ export default {
       try {
         const res = await axios.get('/get_keypair_names'); // 调用ShowData.py中的接口
         if (res.data.code === 200) {
-          this.keypairNames = res.data.data.map(name => {
-            const match = name.match(/\d+/); // 从文件名中提取数字作为ID，例如 private_key1.pkl -> 1
-            const id = match ? parseInt(match[0], 10) : name;
+          this.keypairNames = res.data.data.map(item => {
             return {
-              id: id,
-              label: `密钥组 ${id}` // 显示为 "密钥组 X"
+              id: item.id,
+              label: `密钥组 ${item.id} - ${item.hospital_name}`
             };
           });
           if (this.keypairNames.length > 0 && !this.keypairNames.find(k => k.id === this.groupId)) {
-            // 如果默认的groupId不在获取到的列表中，则选择第一个可用的
+            // 如果当前的 groupId 不在列表中，默认选中第一个
             this.groupId = this.keypairNames[0].id;
           }
-          ElMessage.success('密钥对名称加载成功');
         } else {
-          ElMessage.error('密钥对名称加载失败: ' + res.data.msg);
+          console.error('获取密钥名称失败:', res.data.msg);
         }
       } catch (error) {
-        ElMessage.error('密钥对名称加载失败: ' + error.message);
-        // 如果加载失败，可以提供一个默认的选项，或者禁用提交
-        this.keypairNames = [{ id: 1, label: '密钥组 1 (默认)'}, {id: 2, label: '密钥组 2'}]; // 示例默认值
-        if (!this.keypairNames.find(k => k.id === this.groupId)) {
-            this.groupId = 1;
-        }
+        console.error('获取密钥名称失败:', error);
       }
     },
     onSubmit() {

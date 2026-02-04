@@ -1,7 +1,7 @@
 # 导入必要的模块
 from service.analyse import AnalyseService
 from flask import jsonify, current_app ,request
-from models import Avg , Shuju2 ,AgeGroupAvg # 导入你定义的Avg模型
+from models import Avg , Shuju2 ,AgeGroupAvg, AgeDistribution # 导入你定义的模型
 from db_config import db  # 导入数据库配置
 from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
 from datetime import datetime # 导入 datetime 模块
@@ -168,9 +168,10 @@ def get_all_age_data():
     """
     try:
         # 从请求中获取 group_id，如果不存在则默认为 1
-        group_id = 1
+        group_id = request.args.get('group_id', type=int, default=1)
         # 创建加密器实例，传入 group_id 以选择对应的密钥
         encryptor = PaillierEncryptor()
+        encryptor.load_or_generate_keypair(group_id) # 确保加载正确的密钥
         
         # 查询所有数据记录，只查询指定 group_id 的数据
         records = Shuju2.query.filter_by(group_id=group_id).all()
@@ -219,12 +220,14 @@ def calculate_and_store_age_group_avg():
     
     参数:
         field_name: 需要计算平均值的字段名称
+        group_id: 医院ID，默认为1
     
     返回:
-        bool: 存储操作是否成功
+        JSON响应
     """
     try:
         field_name = request.args.get('field_name')  # 获取字段名称参数
+        group_id = request.args.get('group_id', type=int, default=1) # 获取group_id参数
 
         # 验证字段名称是否有效
         valid_fields = [  'cholesterol', 'triglyceride',
@@ -232,22 +235,20 @@ def calculate_and_store_age_group_avg():
 
         if field_name not in valid_fields:
             print(f"无效的字段名称: {field_name}")
-            return False
+            return jsonify({'code': 400, 'msg': f'无效的字段名称: {field_name}', 'data': None}), 400
 
-        # 创建分析服务实例
-        # 假设 AnalyseService 默认使用 group_id=1 的密钥，或者不需要 group_id 参数
-        # 如果 AnalyseService 需要 group_id，请确保在这里传入正确的 group_id
-        service = AnalyseService()
+        # 创建分析服务实例，传入 group_id 以选择对应的密钥
+        service = AnalyseService(group_id=group_id)
 
-        # 从数据库中查询所有记录，但只获取年龄字段和目标字段，并只处理 group_id=1 的数据
-        records = Shuju2.query.filter_by(group_id=1).with_entities(
+        # 从数据库中查询所有记录，但只获取年龄字段和目标字段，并只处理指定 group_id 的数据
+        records = Shuju2.query.filter_by(group_id=group_id).with_entities(
             Shuju2.age,
             getattr(Shuju2, field_name)
-        ).all()  # 只获取需要的两个字段，并过滤 group_id=1
+        ).all()
 
         if not records:
-            print("没有找到有效数据")
-            return False
+            print(f"没有找到有效数据 (group_id={group_id})")
+            return jsonify({'code': 404, 'msg': f'没有找到有效数据 (group_id={group_id})', 'data': None}), 404
 
         # 初始化年龄段分组
         age_groups = {
@@ -307,8 +308,6 @@ def calculate_and_store_age_group_avg():
                 avg = service.average_encrypted_data(ciphertexts)
 
                 # 如果是BMI或LDL字段，将结果除以FLOAT_PRECISION
-                # 确保service.FLOAT_PRECISION可用，如果FLOAT_PRECISION是全局常量，请直接使用FLOAT_PRECISION
-                # 假设 FLOAT_PRECISION 是 service 实例的一个属性
                 if field_name in ['BMI', 'LDL'] and avg is not None:
                      avg = avg / FLOAT_PRECISION  # 将结果除以全局的FLOAT_PRECISION
                      print(f"{age_group}年龄段的{field_name}平均值(已除以{FLOAT_PRECISION}): {avg}")  # 打印调整后的结果
@@ -317,15 +316,12 @@ def calculate_and_store_age_group_avg():
             else:
                 calculated_result[age_group] = None  # 如果没有数据，设为None
 
-        # 如果计算结果为空，打印信息并返回失败
-        if not calculated_result:
-            print("计算结果为空")
-            # 返回一个包含错误信息的JSON响应
-            return jsonify({'code': 400, 'msg': '计算结果为空', 'data': None}), 400
+        # 如果计算结果全为空，也可能是正常的（比如所有年龄段都没数据），但也可能异常
+        # 这里只要能跑完，就存储结果
 
         # 将计算结果存储到AgeGroupAvg表中
-        # 尝试查询是否存在该field_name的记录
-        age_group_avg_record = AgeGroupAvg.query.filter_by(field_name=field_name).first()
+        # 尝试查询是否存在该field_name和group_id的记录
+        age_group_avg_record = AgeGroupAvg.query.filter_by(field_name=field_name, group_id=group_id).first()
 
         if age_group_avg_record: # 如果记录存在，则更新
             age_group_avg_record.age_0_9 = calculated_result.get('0-9')
@@ -339,10 +335,11 @@ def calculate_and_store_age_group_avg():
             age_group_avg_record.age_80_plus = calculated_result.get('80+')
             age_group_avg_record.created_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
             db.session.commit()
-            print(f"已成功更新 {field_name} 的年龄段平均值记录")
+            print(f"已成功更新 {field_name} (group_id={group_id}) 的年龄段平均值记录")
         else: # 如果记录不存在，则创建新记录
             new_record = AgeGroupAvg(
                 field_name=field_name,
+                group_id=group_id,
                 age_0_9=calculated_result.get('0-9'),
                 age_10_19=calculated_result.get('10-19'),
                 age_20_29=calculated_result.get('20-29'),
@@ -355,9 +352,9 @@ def calculate_and_store_age_group_avg():
             )
             db.session.add(new_record)
             db.session.commit()
-            print(f"已创建 {field_name} 的年龄段平均值新记录")
+            print(f"已创建 {field_name} (group_id={group_id}) 的年龄段平均值新记录")
 
-        # 存储成功后返回成功信息，而不是True
+        # 存储成功后返回成功信息
         return jsonify({'code': 200, 'msg': f'已成功更新 {field_name} 的年龄段平均值记录', 'data': None}), 200
 
     except Exception as e:
@@ -372,10 +369,11 @@ def calculate_and_store_age_group_avg():
 # 定义一个函数用于从数据库获取各年龄段平均值并返回给前端
 def get_age_group_avg_from_db():
     """
-    根据字段名称从数据库获取最新的年龄段平均值数据并返回给前端。
+    根据字段名称和组ID从数据库获取最新的年龄段平均值数据并返回给前端。
 
     请求参数:
         field_name: 需要获取平均值的字段名称
+        group_id: 医院ID，默认为1
 
     返回:
         JSON响应: 包含状态码、消息和各年龄段平均值数据
@@ -383,6 +381,7 @@ def get_age_group_avg_from_db():
     try:
         # 从请求参数中获取字段名称
         field_name = request.args.get('field_name')  # 获取字段名称参数
+        group_id = request.args.get('group_id', type=int, default=1)
 
         # 验证字段名称是否有效
         valid_fields = [  'cholesterol', 'triglyceride',
@@ -403,7 +402,7 @@ def get_age_group_avg_from_db():
             })
 
         # 从数据库中获取最新的数据并返回给前端
-        latest_data = AgeGroupAvg.query.filter_by(field_name=field_name).first()
+        latest_data = AgeGroupAvg.query.filter_by(field_name=field_name, group_id=group_id).first()
 
         if latest_data:
             result_to_return = {
@@ -441,6 +440,88 @@ def get_age_group_avg_from_db():
             'data': None
         })
 
-# 请注意：原有的 get_avg_by_age_group 函数已被拆分。
-# 您需要在 app.py 中将 get_age_group_avg_from_db 函数注册为路由，
-# 并确保 calculate_and_store_age_group_avg 函数在需要时被调用（例如，在数据导入或更新后）。
+def calculate_and_store_age_distribution():
+    """
+    计算指定组的年龄分布并存入数据库
+    """
+    try:
+        group_id = request.args.get('group_id', type=int, default=1)
+        service = AnalyseService(group_id=group_id)
+        
+        # 获取所有年龄数据
+        records = Shuju2.query.filter_by(group_id=group_id).with_entities(Shuju2.age).all()
+        
+        age_counts = {
+            'age_0_9': 0, 'age_10_19': 0, 'age_20_29': 0,
+            'age_30_39': 0, 'age_40_49': 0, 'age_50_59': 0,
+            'age_60_69': 0, 'age_70_79': 0, 'age_80_plus': 0
+        }
+        
+        for record in records:
+            if record.age is not None:
+                try:
+                    decrypted_age = service.encryptor.decrypt(
+                        service.encryptor.public_key.encrypt(0).__class__(
+                            service.encryptor.public_key, int(record.age)
+                        )
+                    )
+                    
+                    if 0 <= decrypted_age < 10: age_counts['age_0_9'] += 1
+                    elif 10 <= decrypted_age < 20: age_counts['age_10_19'] += 1
+                    elif 20 <= decrypted_age < 30: age_counts['age_20_29'] += 1
+                    elif 30 <= decrypted_age < 40: age_counts['age_30_39'] += 1
+                    elif 40 <= decrypted_age < 50: age_counts['age_40_49'] += 1
+                    elif 50 <= decrypted_age < 60: age_counts['age_50_59'] += 1
+                    elif 60 <= decrypted_age < 70: age_counts['age_60_69'] += 1
+                    elif 70 <= decrypted_age < 80: age_counts['age_70_79'] += 1
+                    else: age_counts['age_80_plus'] += 1
+                except Exception as e:
+                    print(f"解密年龄出错: {e}")
+                    continue
+        
+        # 存入数据库
+        dist_record = AgeDistribution.query.filter_by(group_id=group_id).first()
+        if not dist_record:
+            dist_record = AgeDistribution(group_id=group_id)
+            db.session.add(dist_record)
+        
+        for k, v in age_counts.items():
+            setattr(dist_record, k, v)
+        
+        dist_record.created_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+        db.session.commit()
+        
+        return jsonify({'code': 200, 'msg': '计算完成'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'code': 500, 'msg': str(e)})
+
+def get_age_distribution_from_db():
+    """
+    获取指定组的年龄分布数据
+    """
+    try:
+        group_id = request.args.get('group_id', type=int, default=1)
+        dist_record = AgeDistribution.query.filter_by(group_id=group_id).first()
+        
+        if not dist_record:
+            return jsonify({'code': 404, 'msg': '未找到数据'})
+            
+        data = {
+            '0-9岁': dist_record.age_0_9,
+            '10-19岁': dist_record.age_10_19,
+            '20-29岁': dist_record.age_20_29,
+            '30-39岁': dist_record.age_30_39,
+            '40-49岁': dist_record.age_40_49,
+            '50-59岁': dist_record.age_50_59,
+            '60-69岁': dist_record.age_60_69,
+            '70-79岁': dist_record.age_70_79,
+            '80岁以上': dist_record.age_80_plus,
+            'created_at': dist_record.created_at.strftime('%Y-%m-%d %H:%M:%S') if dist_record.created_at else None
+        }
+        
+        return jsonify({'code': 200, 'data': data})
+        
+    except Exception as e:
+        return jsonify({'code': 500, 'msg': str(e)})

@@ -17,13 +17,17 @@
       </el-button>
     </div>
 
-    <!-- 显示数据时间信息 -->
-    <div v-if="latestDataTimestamp" class="timestamp-display">
-      数据更新时间: {{ latestDataTimestamp }}
-    </div>
+    <!-- 操作栏：密钥组选择和计算按钮 -->
+    <div class="operation-bar">
+      <el-select v-model="selectedKeyIndex" placeholder="选择密钥组" style="width: 200px; margin-right: 20px;" @change="handleKeyChange">
+        <el-option
+          v-for="item in keypairNames"
+          :key="item.id"
+          :label="item.hospital_name"
+          :value="item.id">
+        </el-option>
+      </el-select>
 
-    <!-- 计算最新平均值的按钮，单独放置并居中 -->
-    <div class="calculate-button-container">
       <el-button
         type="success"
         @click="calculateLatestAvg"
@@ -31,6 +35,11 @@
       >
         计算最新平均值
       </el-button>
+    </div>
+
+    <!-- 显示数据时间信息 -->
+    <div v-if="latestDataTimestamp" class="timestamp-display">
+      数据更新时间: {{ latestDataTimestamp }}
     </div>
 
     <!-- 折线图容器 -->
@@ -71,13 +80,16 @@ export default {
         glucose: '血糖'
       },
       // echarts实例
-      chartInstance: null
+      chartInstance: null,
+      // 密钥组列表
+      keypairNames: [],
+      // 当前选中的密钥组索引
+      selectedKeyIndex: null
     };
   },
   // 组件创建时自动获取默认字段的数据
   created() {
-    // 页面加载时，从数据库获取数据
-    this.fetchData(this.currentField);
+    this.fetchKeypairNames();
   },
   // 组件挂载后初始化echarts实例
   mounted() {
@@ -93,6 +105,28 @@ export default {
     window.removeEventListener('resize', this.handleResize);
   },
   methods: {
+    // 获取密钥组列表
+    async fetchKeypairNames() {
+      try {
+        const res = await axios.get('/get_keypair_names');
+        if (res.data.code === 200) {
+          this.keypairNames = res.data.data;
+          // 默认选中第一个
+          if (this.keypairNames.length > 0) {
+            this.selectedKeyIndex = this.keypairNames[0].id;
+            this.fetchData(this.currentField); // 选中后再获取数据
+          }
+        }
+      } catch (error) {
+        ElMessage.error('获取密钥列表失败');
+      }
+    },
+
+    // 处理密钥切换
+    handleKeyChange() {
+      this.fetchData(this.currentField);
+    },
+
     // 初始化echarts实例
     initChart() {
       // 获取echarts实例（已在main.js全局挂载）
@@ -121,13 +155,16 @@ export default {
 
     // 从后端获取数据 (从数据库获取)
     async fetchData(fieldName) {
+      if (!this.selectedKeyIndex) return;
+
       this.isLoading = true;
 
       try {
         // 发送GET请求到后端获取数据库中存储的平均值数据
         const res = await axios.get('/data/get_age_group_avg_from_db', {
           params: {
-            field_name: fieldName
+            field_name: fieldName,
+            group_id: this.selectedKeyIndex
           }
         });
 
@@ -161,6 +198,11 @@ export default {
 
     // 计算最新平均值并存储到数据库
     async calculateLatestAvg() {
+      if (!this.selectedKeyIndex) {
+        ElMessage.warning('请先选择密钥组');
+        return;
+      }
+
       this.isCalculating = true;
       ElMessage.info('正在计算最新平均值...');
 
@@ -168,7 +210,8 @@ export default {
         // 发送GET请求到后端触发计算和存储操作
         const res = await axios.get('/data/calculate_and_store_age_group_avg', {
            params: {
-            field_name: this.currentField // 传递当前选中的字段
+            field_name: this.currentField, // 传递当前选中的字段
+            group_id: this.selectedKeyIndex
           }
         });
 
@@ -324,10 +367,11 @@ export default {
   color: #606266;
 }
 
-/* 计算按钮容器样式，用于居中 */
-.calculate-button-container {
+/* 操作栏样式 */
+.operation-bar {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 30px;
 }
 

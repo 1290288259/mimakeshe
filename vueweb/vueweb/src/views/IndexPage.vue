@@ -1,5 +1,5 @@
-<template style="height: 100vh">
-  <div class="common-layout" style="min-height: 100vh; display: flex; flex-direction: column;">
+<template>
+  <div class="common-layout" style="height: 100vh; display: flex; flex-direction: column; overflow: hidden;">
     <el-container style="height: 100%">
 
       <!-- Aside Section -->
@@ -8,20 +8,20 @@
       </el-aside>
 
       <!-- Main Section -->
-      <el-container style="height: 100%; display: flex; flex-direction: column;">
+      <el-container style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
         <!-- Header section -->
         <el-header style="background-color: #fff; padding: 0 20px;">
           <HeaderPage />
         </el-header>
 
         <!-- Main content area -->
-        <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1; overflow-y: auto; max-height: calc(100vh - 120px);">
+        <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1; overflow-y: auto;">
           <router-view></router-view>
         </el-main>
 
         <!-- Footer section -->
         <el-footer style="background-color: #fff; padding: 10px 20px; text-align: center; border-top: 1px solid #ddd;">
-          © 2025 密码学课设
+          © 2026 黄俊凯毕设
         </el-footer>
       </el-container>
 
@@ -71,7 +71,7 @@ export default defineComponent({
   color: white;
   padding-top: 20px;
   height: 100%; /* 高度占满父容器 */
-  min-height: 100vh; /* 保证在内容较少时也能占满视口高度 */
+  overflow: hidden; /* 隐藏侧边栏滚动条 */
 }
 
 /* 工具栏样式 */

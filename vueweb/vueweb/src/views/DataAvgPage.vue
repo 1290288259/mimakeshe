@@ -7,12 +7,21 @@
       <span v-if="createdAt" style="font-size:16px;color:#888;">（数据时间：{{ createdAt }}）</span>
     </h2>
     
-    <!-- 切换按钮组 -->
+    <!-- 切换按钮组和密钥选择 -->
     <div class="switch-container">
-      <el-radio-group v-model="dataType" @change="switchDataType">
+      <el-radio-group v-model="dataType" @change="switchDataType" style="margin-right: 20px;">
         <el-radio-button label="encrypted">密文平均值</el-radio-button>
         <el-radio-button label="plain">明文平均值</el-radio-button>
       </el-radio-group>
+      
+      <el-select v-model="selectedKeyIndex" placeholder="选择密钥组" style="width: 200px;" @change="handleKeyChange">
+        <el-option
+          v-for="item in keypairNames"
+          :key="item.id"
+          :label="item.hospital_name"
+          :value="item.id">
+        </el-option>
+      </el-select>
     </div>
     
     <!-- 新增flex容器，使表格和柱状图左右排列 -->
@@ -57,18 +66,42 @@ export default {
       // 新增：标记是否正在计算平均值
       isCalculating: false,
       // 新增：数据类型（密文/明文）
-      dataType: 'encrypted'
+      dataType: 'encrypted',
+      // 密钥组列表
+      keypairNames: [],
+      // 当前选中的密钥组索引
+      selectedKeyIndex: null
     };
   },
   // 组件创建时自动调用fetchAverages方法获取数据
   created() {
-    this.fetchAverages();
+    this.fetchKeypairNames(); // 先获取密钥列表
   },
   mounted() {
     // 组件挂载后初始化echarts实例
     this.initChart();
   },
   methods: {
+    // 获取密钥组列表
+    async fetchKeypairNames() {
+      try {
+        const res = await axios.get('/get_keypair_names');
+        if (res.data.code === 200) {
+          this.keypairNames = res.data.data;
+          // 默认选中第一个
+          if (this.keypairNames.length > 0) {
+            this.selectedKeyIndex = this.keypairNames[0].id;
+            this.fetchAverages(); // 选中后再获取数据
+          }
+        }
+      } catch (error) {
+        ElMessage.error('获取密钥列表失败');
+      }
+    },
+    // 处理密钥切换
+    handleKeyChange() {
+      this.fetchAverages();
+    },
     // 切换数据类型（密文/明文）
     switchDataType() {
       // 清空当前数据
@@ -80,9 +113,12 @@ export default {
     
     // 异步方法：从后端获取平均值数据
     async fetchAverages() {
+      if (!this.selectedKeyIndex) return;
+      
       try {
         // 根据当前数据类型选择不同的接口
-        const url = this.dataType === 'encrypted' ? '/data/get_avg' : '/data/get_plain_avg';
+        let url = this.dataType === 'encrypted' ? '/data/get_avg' : '/data/get_plain_avg';
+        url += `?group_id=${this.selectedKeyIndex}`; // 添加 group_id 参数
         
         // 发送GET请求到后端接口
         const res = await axios.get(url);
@@ -128,12 +164,18 @@ export default {
     
     // 新增：计算最新平均值方法
     async calculateNewAverage() {
+      if (!this.selectedKeyIndex) {
+        ElMessage.warning('请先选择密钥组');
+        return;
+      }
+
       // 设置计算状态为true
       this.isCalculating = true;
       
       try {
         // 根据当前数据类型选择不同的接口
-        const url = this.dataType === 'encrypted' ? '/data/calculate_avg' : '/data/calculate_plain_avg';
+        let url = this.dataType === 'encrypted' ? '/data/calculate_avg' : '/data/calculate_plain_avg';
+        url += `?group_id=${this.selectedKeyIndex}`; // 添加 group_id 参数
         
         // 调用后端计算平均值接口
         const calcRes = await axios.get(url);

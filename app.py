@@ -12,7 +12,7 @@ from api.updata import updata  # 导入updata路由
 from api.Data_processing import  privacy_intersection ,get_data_analysis_result# 导入数据处理接口
 from api.ShowData import getdataByuserid, getAllEncryptedData, getEncryptedData, editEncryptedData, deleteEncryptedData ,getPlainAverages, select_keypair, get_keypair_names ,generate_new_keypair
 from config import FLOAT_PRECISION  # 从config.py导入全局变量
-from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,calculate_and_store_age_group_avg, get_age_group_avg_from_db # 导入数据处理接口
+from api.DataOB import calculate_avg, get_avg ,get_all_age_data ,calculate_and_store_age_group_avg, get_age_group_avg_from_db, calculate_and_store_age_distribution, get_age_distribution_from_db # 导入数据处理接口
 from api.test import run_all_tests, run_average_test, run_exact_match_test_api, run_fuzzy_match_test_api
 
 # 创建Flask应用实例
@@ -64,6 +64,10 @@ app.route('/data/get_age_group_avg_from_db', methods=['GET'])(get_age_group_avg_
 app.route('/data/privacy_intersection', methods=['GET'])(privacy_intersection)
 # 注册获取隐私求交结果路由
 app.route('/data/get_data_analysis_result', methods=['GET'])(get_data_analysis_result)
+
+# 注册年龄分布相关路由
+app.route('/data/calculate_age_distribution', methods=['GET'])(calculate_and_store_age_distribution)
+app.route('/data/get_age_distribution', methods=['GET'])(get_age_distribution_from_db)
 
 # 注册获取明文验证平均值结果路由
 app.route('/data/get_plain_avg', methods=['GET'])(getPlainAverages)

@@ -6,6 +6,28 @@ from config import FLOAT_PRECISION  # 导入全局变量FLOAT_PRECISION
 from service.yanzheng import calculate_averages
 import os # 导入os模块，用于文件系统操作
 import re # 导入re模块，用于正则表达式操作
+import json # 导入json模块
+
+# 密钥与医院名称映射文件路径
+KEY_MAP_FILE = 'e:\\桌面\\zuoye\\密码学课设\\Medical_data_analysis_system\\service\\key_hospital_map.json'
+
+def load_key_map():
+    """加载密钥-医院映射"""
+    if not os.path.exists(KEY_MAP_FILE):
+        return {}
+    try:
+        with open(KEY_MAP_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_key_map(mapping):
+    """保存密钥-医院映射"""
+    try:
+        with open(KEY_MAP_FILE, 'w', encoding='utf-8') as f:
+            json.dump(mapping, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"保存密钥映射失败: {e}")
 
 # 在模块级别创建Paillier加密器实例，以便所有函数共享
 encryptor = PaillierEncryptor()
@@ -147,25 +169,32 @@ def getAllEncryptedData():
         traceback.print_exc() # 打印完整的堆栈跟踪
         return jsonify({'code': 500, 'msg': '数据查询失败: ' + str(e)}) # 返回失败的JSON响应
 
-# 根据用户ID和数据ID查询特定数据（带分页）
+# 根据关键字查询数据（支持ID或用户ID）
 def getEncryptedData():
-    user_id = request.args.get('user_id')
-    data_id = request.args.get('data_id')
+    keyword = request.args.get('keyword')
     page = request.args.get('page', 1, type=int)
     page_size = request.args.get('page_size', 10, type=int)
     
-    if not user_id and not data_id:
-        return jsonify({'code': 400, 'msg': '请至少提供一个查询条件'})
+    if not keyword:
+        return jsonify({'code': 400, 'msg': '请提供查询关键字'})
     
     try:
+        # 构建基础查询，关联UserData表
         query = db.session.query(Shuju2, UserData.user_id).join(
             UserData, Shuju2.id == UserData.data_id, isouter=True
         )
         
-        if user_id:
-            query = query.filter(UserData.user_id == user_id)
-        if data_id:
-            query = query.filter(Shuju2.id == data_id)
+        # 尝试将关键字转换为整数进行ID匹配
+        try:
+            keyword_int = int(keyword)
+            # 匹配数据ID或用户ID
+            query = query.filter(
+                (Shuju2.id == keyword_int) | 
+                (UserData.user_id == keyword) 
+            )
+        except ValueError:
+            # 如果关键字不是纯数字，仅尝试匹配用户ID（假设用户ID可能是字符串）
+            query = query.filter(UserData.user_id == keyword)
         
         # 获取总记录数
         total_count = query.count()
@@ -268,7 +297,8 @@ def deleteEncryptedData():
 def getPlainAverages():
     try:
         from service.yanzheng import calculate_averages  # 直接导入函数
-        averages = calculate_averages()  # 直接调用函数
+        group_id = request.args.get('group_id', 1, type=int)
+        averages = calculate_averages(group_id=group_id)  # 直接调用函数
         return jsonify({
             'code': 200,
             'msg': '平均值计算成功',
@@ -308,11 +338,27 @@ def get_keypair_names():
         # 获取所有以.pkl结尾的文件名
         key_files = [f for f in os.listdir(key_dir) if f.endswith('.pkl')]
         
-        # 直接返回文件名列表
+        mapping = load_key_map()
+        
+        result = []
+        for f in key_files:
+            # 提取索引
+            match = re.search(r'private_key(\d+).pkl', f)
+            if match:
+                idx = int(match.group(1))
+                hospital = mapping.get(str(idx), "未知医院")
+                result.append({'id': idx, 'hospital_name': hospital, 'filename': f})
+            else:
+                result.append({'id': f, 'hospital_name': "Unknown", 'filename': f})
+                
+        # 按ID排序
+        result.sort(key=lambda x: x['id'] if isinstance(x['id'], int) else 0)
+        
+        # 返回包含详细信息的列表
         return jsonify({
             'code': 200,
-            'msg': '成功获取密钥文件名称',
-            'data': key_files
+            'msg': '成功获取密钥文件信息',
+            'data': result
         })
     except Exception as e:
         # 捕获异常并返回错误信息
@@ -324,20 +370,39 @@ def generate_new_keypair():
     try:
         # 从 GET 请求的查询参数中获取 key_index
         key_index = request.args.get('key_index')
+        hospital_name = request.args.get('hospital_name', '未命名医院')
 
-        # 检查 key_index 是否存在
-        if key_index is None:
-            return jsonify({'code': 400, 'msg': '缺少 key_index 参数'}), 400
-        
-        # 将 key_index 转换为整数
-        try:
-            key_index = int(key_index)
-        except ValueError:
-            return jsonify({'code': 400, 'msg': 'key_index 必须是整数'}), 400
+        # 如果没有提供 key_index，自动计算下一个可用的索引
+        if not key_index:
+            key_dir = 'e:\\桌面\\zuoye\\密码学课设\\Medical_data_analysis_system\\service\\private_key'
+            if not os.path.exists(key_dir):
+                os.makedirs(key_dir)
+            
+            existing_indices = []
+            for f in os.listdir(key_dir):
+                match = re.search(r'private_key(\d+).pkl', f)
+                if match:
+                    existing_indices.append(int(match.group(1)))
+            
+            if existing_indices:
+                key_index = max(existing_indices) + 1
+            else:
+                key_index = 1
+        else:
+            # 将 key_index 转换为整数
+            try:
+                key_index = int(key_index)
+            except ValueError:
+                return jsonify({'code': 400, 'msg': 'key_index 必须是整数'}), 400
 
         # 调用 PaillierEncryptor 中的 generate_keypair 方法生成密钥对
         # encryptor 实例已在模块级别创建
         encryptor.generate_keypair(key_index)
+        
+        # 保存映射
+        mapping = load_key_map()
+        mapping[str(key_index)] = hospital_name
+        save_key_map(mapping)
         
         # 返回成功信息
         return jsonify({
@@ -345,7 +410,8 @@ def generate_new_keypair():
             'msg': f'成功生成密钥对，索引为 {key_index}',
             'data': {
                 'public_key_file': encryptor.public_key_file,
-                'private_key_file': encryptor.private_key_file
+                'private_key_file': encryptor.private_key_file,
+                'hospital_name': hospital_name
             }
         })
     except FileExistsError as fee: # 捕获文件已存在的异常

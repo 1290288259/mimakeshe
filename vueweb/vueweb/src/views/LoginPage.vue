@@ -1,216 +1,255 @@
 <template>
-  <router-view></router-view>
-  <div class="login-container" @keyup.enter="handleEnter">
-    <h2>登录</h2>
-    <!-- 登录表单 -->
-    <el-form label-position="top" class="login-form">
-      <el-form-item class="form-item">
-        <div class="label-text">账号</div>
-        <el-input v-model="username" placeholder="请输入账号" class="input-field" />
-      </el-form-item>
-      <el-form-item class="form-item">
-        <div class="label-text">密码</div>
-        <el-input v-model="password" show-password placeholder="请输入密码" class="input-field" />
-      </el-form-item>
-    </el-form>
-    <div class="button-group">
-      <!-- 登录按钮 -->
-      <el-button type="primary" @click="login" class="login-button">登录</el-button>
-      <!-- 注册按钮 -->
-      <el-button type="success" @click="zhuce" class="register-button">注册</el-button>
+  <div class="login-page">
+    <!-- 登录卡片 -->
+    <div class="login-container" @keyup.enter="handleEnter">
+      <div class="login-header">
+        <h2>欢迎登录</h2>
+        <p class="subtitle">医疗数据分析系统</p>
+      </div>
+      
+      <el-form class="login-form">
+        <el-form-item class="form-item">
+          <el-input 
+            v-model="username" 
+            placeholder="请输入账号" 
+            class="input-field"
+            :prefix-icon="User"
+          />
+        </el-form-item>
+        
+        <el-form-item class="form-item">
+          <el-input 
+            v-model="password" 
+            show-password 
+            placeholder="请输入密码" 
+            class="input-field"
+            :prefix-icon="Lock"
+          />
+        </el-form-item>
+
+        <div class="button-group">
+          <el-button type="primary" @click="login" class="login-button" :loading="loading" round>
+            登录系统
+          </el-button>
+          <el-button text bg @click="zhuce" class="register-button" round>
+            注册账号
+          </el-button>
+        </div>
+      </el-form>
     </div>
 
-    <!-- 注册框 -->
-    <el-dialog v-model="dialogVisible" title="注册" width="500">
-      <el-form :model="form" label-width="auto" class="register-form">
-        <el-form-item label="账号：">
-          <el-input v-model="form.userName" />
+    <!-- 注册弹窗 -->
+    <el-dialog 
+      v-model="dialogVisible" 
+      title="用户注册" 
+      width="420px" 
+      align-center
+      class="register-dialog custom-dialog"
+      :show-close="false"
+      destroy-on-close
+    >
+      <el-form :model="form" label-width="70px" class="register-form">
+        <el-form-item label="账号">
+          <el-input v-model="form.userName" placeholder="请输入账号" :prefix-icon="User" />
         </el-form-item>
-        <el-form-item label="密码：">
-          <el-input v-model="form.userPassword" />
+        <el-form-item label="密码">
+          <el-input v-model="form.userPassword" show-password placeholder="请输入密码" :prefix-icon="Lock" />
         </el-form-item>
-        <el-form-item label="姓名：">
-          <el-input v-model="form.name" />
+        <el-form-item label="姓名">
+          <el-input v-model="form.name" placeholder="请输入真实姓名" />
         </el-form-item>
-        <el-form-item label="地址：">
-          <el-input v-model="form.userAddress" />
+        <el-form-item label="地址">
+          <el-input v-model="form.userAddress" placeholder="请输入联系地址" />
         </el-form-item>
-        <el-form-item label="手机号：">
-          <el-input v-model="form.userPhone" />
+        <el-form-item label="手机号">
+          <el-input v-model="form.userPhone" placeholder="请输入手机号码" />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="register">提交</el-button>
+          <el-button @click="dialogVisible = false" class="cancel-btn">取消</el-button>
+          <el-button type="primary" @click="register" class="submit-btn">立即注册</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
+<script setup>
+import { ref, onMounted, onBeforeUnmount, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
+import axios from 'axios'
 
+const router = useRouter()
 
-<script>
-export default {
-  data() {
-    return {
-      // 用户名和密码
-      username: '',
-      password: '',
-      form: {
-        userName: '',
-        userPassword: '',
-        name: '',
-        userAddress: '',
-        userPhone: '',
-      },
-      dialogVisible: false,
-    };
-  },
-  mounted() {
-    // 组件挂载时，为html和body添加背景样式
-    document.documentElement.style.height = '100%';
-    document.body.style.height = '100%';
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    document.body.style.backgroundImage = "url('" + require('@/assets/beijing.png') + "')";
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundRepeat = 'no-repeat';
-    document.body.style.backgroundAttachment = 'fixed';
-  },
-  beforeUnmount() {
-    // 组件卸载前，移除html和body的背景样式
-    document.documentElement.style.height = '';
-    document.body.style.height = '';
-    document.body.style.margin = '';
-    document.body.style.padding = '';
-    document.body.style.backgroundImage = '';
-    document.body.style.backgroundSize = '';
-    document.body.style.backgroundPosition = '';
-    document.body.style.backgroundRepeat = '';
-    document.body.style.backgroundAttachment = '';
-  },
-  methods: {
-    // 登录方法
-    login() {
-      // 打印登录信息，用于调试
-      console.log('登录')
-      console.log(this.username) // 打印用户名
-      console.log(this.password) // 打印密码
+// 状态定义
+const username = ref('')
+const password = ref('')
+const loading = ref(false)
+const dialogVisible = ref(false)
 
-      // 使用 axios 发起 POST 请求，向后端发送登录请求
-      this.$axios.post("/user/login", { userName: this.username, userPassword: this.password }).then(res => res.data) // 获取返回的响应数据
-          .then(res => {
-            // 判断登录是否成功（根据后端返回的 status code 或者自定义的 code）
-            if (res.code == 200) {
-              console.log('登录成功')  // 打印登录成功信息
-              this.$message.success('登录成功')  // 显示成功提示框
+const form = reactive({
+  userName: '',
+  userPassword: '',
+  name: '',
+  userAddress: '',
+  userPhone: '',
+})
 
-              // 将用户信息存储到 sessionStorage 中
-              sessionStorage.setItem('User', JSON.stringify(res.data.user))
-              // 将模块信息存储到 sessionStorage 中
-              sessionStorage.setItem('ModuleList', JSON.stringify(res.data.moduleList))
-
-              // 登录成功后，重定向到主页（Index 页面）
-              this.$router.replace('/Index/home')
-            }
-            else if (res.code == 401) {
-              this.$message.error(res.msg)
-            }
-            else {
-              console.log('登录失败')  // 打印登录失败信息
-              this.$message.error('登录失败')  // 显示失败提示框
-            }
-          })
-          .catch(error => {
-            // 捕获并处理请求过程中发生的任何错误
-            console.error('登录请求发生错误', error)
-            this.$message.error('登录请求失败，请稍后重试')  // 显示网络请求失败的错误提示
-          })
-    },
-    // 注册框触发
-    zhuce(){
-      this.dialogVisible = true;
-      console.log('触发注册框')
-      this.form.username = '';
-      this.form.password = '';
-      this.form.name = '';
-      this.form.userAddress = '';
-      this.form.userPhone = '';
-    },
-
-    // 注册方法（这里先只是一个占位，后续需根据实际注册逻辑完善）
-    register() {
-      console.log('触发注册操作，需完善具体注册逻辑')
-      // 这里可以添加具体的注册逻辑，比如跳转到注册页面或者发起注册的 API 请求等
-      this.$axios.post("/user/register" , this.form).then(res => res.data).then(res => {
-          if (res.code == 200){
-            console.log('注册成功')
-            this.$message.success('注册成功')
-            this.dialogVisible = false;
-            // 注册成功后，重定向到登录页面
-          }else {
-            console.log('注册失败')
-            this.$message.error('注册失败')
-            this.dialogVisible = false;
-          }
-      })
-    },
-
-    // 回车键触发登录
-    handleEnter() {
-      console.log("回车键触发登录")
-      this.login()
-    },
-
+// 背景设置逻辑
+const setBackground = () => {
+  document.documentElement.style.height = '100%';
+  document.body.style.height = '100%';
+  document.body.style.margin = '0';
+  document.body.style.padding = '0';
+  document.body.style.backgroundImage = "url('" + require('@/assets/beijing.png') + "')";
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundRepeat = 'no-repeat';
+  document.body.style.backgroundAttachment = 'fixed';
 }
-};
+
+const clearBackground = () => {
+  document.documentElement.style.height = '';
+  document.body.style.height = '';
+  document.body.style.margin = '';
+  document.body.style.padding = '';
+  document.body.style.backgroundImage = '';
+  document.body.style.backgroundSize = '';
+  document.body.style.backgroundPosition = '';
+  document.body.style.backgroundRepeat = '';
+  document.body.style.backgroundAttachment = '';
+}
+
+// 生命周期钩子
+onMounted(() => {
+  setBackground()
+})
+
+onBeforeUnmount(() => {
+  clearBackground()
+})
+
+// 登录逻辑
+const login = () => {
+  if (!username.value || !password.value) {
+    ElMessage.warning('请输入账号和密码')
+    return
+  }
+
+  loading.value = true
+  
+  axios.post("/user/login", { userName: username.value, userPassword: password.value })
+      .then(res => res.data)
+      .then(res => {
+        loading.value = false
+        if (res.code == 200) {
+          ElMessage.success('登录成功')
+          sessionStorage.setItem('User', JSON.stringify(res.data.user))
+          sessionStorage.setItem('ModuleList', JSON.stringify(res.data.moduleList))
+          router.replace('/Index/home')
+        } else if (res.code == 401) {
+          ElMessage.error(res.msg)
+        } else {
+          ElMessage.error('登录失败')
+        }
+      })
+      .catch(error => {
+        loading.value = false
+        console.error('登录请求发生错误', error)
+        ElMessage.error('登录请求失败，请稍后重试')
+      })
+}
+
+// 注册相关逻辑
+const zhuce = () => {
+  dialogVisible.value = true
+  // 重置表单
+  Object.assign(form, {
+    userName: '',
+    userPassword: '',
+    name: '',
+    userAddress: '',
+    userPhone: '',
+  })
+}
+
+const register = () => {
+  if (!form.userName || !form.userPassword) {
+    ElMessage.warning('请填写完整的注册信息')
+    return
+  }
+  
+  axios.post("/user/register", form).then(res => res.data).then(res => {
+      if (res.code == 200){
+        ElMessage.success('注册成功')
+        dialogVisible.value = false
+      } else {
+        ElMessage.error(res.msg || '注册失败')
+      }
+  }).catch(() => {
+    ElMessage.error('注册请求失败')
+  })
+}
+
+const handleEnter = () => {
+  login()
+}
 </script>
 
-<!-- 全局样式，不带scoped属性，作用于整个页面 -->
-<style>
-/* 设置html和body的高度为100%，确保背景覆盖整个页面 */
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+<style scoped>
+.login-page {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 确保父容器背景透明，显示body背景 */
+  background: transparent; 
 }
 
-
-</style>
-
-<style scoped>
+/* 玻璃拟态卡片 */
 .login-container {
-  /* 移除 max-width，让其可以根据内容自适应或设置为100% */
-  /* max-width: 400px; */
-  width: 400px; /* 设置固定宽度，或者根据需要调整 */
-  padding: 40px;
-  background: rgba(8, 7, 105, 0.8); /* 半透明白色背景，让壁纸透出来 */
-  border-radius: 12px; /* 圆角效果 */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* 添加阴影 */
+  width: 400px;
+  padding: 50px 40px;
+  background: rgba(255, 255, 255, 0.15); /* 浅色半透明背景 */
+  backdrop-filter: blur(20px); /* 毛玻璃效果 */
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 边框高亮 */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #eaeaf5; /* 将文字颜色改为深蓝色 */
-
-  /* 实现全屏居中 */
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-h2 {
+.login-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: #1976D2;
+}
+
+.login-header h2 {
   font-size: 28px;
-  font-weight: bold;
-  color: #dddde0; /* 将文字颜色改为深蓝色 */
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.9;
   letter-spacing: 1px;
+  font-weight: 500;
 }
 
 .login-form {
@@ -218,96 +257,112 @@ h2 {
 }
 
 .form-item {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
+  margin-bottom: 25px;
 }
 
-.label-text {
-  font-size: 20px;
-  font-weight: bold;
-  color: #fff; /* 文字颜色 */
-  margin-right: 15px;
-  flex-shrink: 0; /* 防止文字缩小 */
-  white-space: nowrap;
+/* 深度选择器修改Element Plus输入框样式 */
+:deep(.input-field .el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 30px;
+  padding: 8px 15px;
+  transition: all 0.3s ease;
 }
 
-.input-field {
-  background-color: rgba(255, 255, 255, 0.8); /* 输入框背景色透明 */
-  border-radius: 8px; /* 输入框圆角 */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 输入框阴影 */
-  width: 100%;
+:deep(.input-field .el-input__wrapper.is-focus) {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  border-color: #1976D2;
+  box-shadow: 0 0 10px rgba(25, 118, 210, 0.2) !important;
+}
+
+:deep(.input-field .el-input__inner) {
+  color: #1976D2 !important;
   height: 40px;
+  font-weight: 500;
+}
+
+:deep(.input-field .el-input__inner::placeholder) {
+  color: rgba(25, 118, 210, 0.5);
+}
+
+:deep(.input-field .el-icon) {
+  color: #1976D2;
 }
 
 .button-group {
-  width: 100%;
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 10px;
+  width: 100%;
+  align-items: center;
 }
 
 .login-button {
-  width: 45%;
+  width: 100%;
   height: 45px;
-  border-radius: 30px;
   font-size: 16px;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #409EFF 0%, #1976D2 100%);
+  border: none;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+  transition: all 0.3s;
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, #1976D2 0%, #409EFF 100%);
+  transform: scale(1.02);
 }
 
 .register-button {
-  width: 45%;
+  width: 100%;
   height: 45px;
-  border-radius: 30px;
-  font-size: 16px;
+  color: #1976D2 !important;
+  border: 1px solid rgba(25, 118, 210, 0.3) !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  font-weight: 600;
+  letter-spacing: 2px;
 }
 
-.el-button--primary {
-  background-color: #2ecc71;
-  border-color: #2ecc71;
-  color: #fff;
+.register-button:hover {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: #1976D2 !important;
 }
 
-.el-button--primary:hover {
-  background-color: #27ae60;
+/* 注册弹窗样式 */
+:deep(.custom-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
 }
 
-.el-button--success {
-  background-color: #f39c12;
-  border-color: #f39c12;
-  color: #fff;
-}
-
-.el-button--success:hover {
-  background-color: #e67e22;
-}
-
-.dialog-footer {
+:deep(.custom-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
   text-align: center;
 }
 
-.register-form .el-form-item {
-  margin-bottom: 15px;
+:deep(.custom-dialog .el-dialog__title) {
+  font-weight: 600;
+  color: #333;
 }
 
-.register-form .el-input {
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.register-form {
+  padding: 10px 20px 0;
 }
 
-.el-dialog__header {
-  background-color: #8e44ad;
-  color: white;
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding-bottom: 10px;
 }
 
-.el-dialog {
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+.dialog-footer .el-button {
+  padding: 10px 30px;
+  border-radius: 20px;
 }
-
-.el-input__inner:focus {
-  border-color: #3498db !important;
-  box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
-}
-
 </style>
-

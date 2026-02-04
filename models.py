@@ -271,7 +271,7 @@ class AgeGroupAvg(db.Model):
     __tablename__ = 'age_group_avg'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True) # 主键，自动递增
-    field_name = db.Column(db.String(50), unique=True, nullable=False) # 字段名称，非空且唯一
+    field_name = db.Column(db.String(50), nullable=False) # 字段名称，非空，移除唯一约束以支持多组
     age_0_9 = db.Column(db.Float)    # 0-9岁年龄段平均值
     age_10_19 = db.Column(db.Float)  # 10-19岁年龄段平均值
     age_20_29 = db.Column(db.Float)  # 20-29岁年龄段平均值
@@ -289,4 +289,31 @@ class AgeGroupAvg(db.Model):
     )
 
     def __repr__(self):
-        return f'<AgeGroupAvg {self.field_name}>'
+        return f'<AgeGroupAvg {self.field_name} group={self.group_id}>'
+
+
+class AgeDistribution(db.Model):
+    """
+    年龄分布统计结果表
+    """
+    __tablename__ = 'age_distribution'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    group_id = db.Column(db.Integer, default=1, nullable=False)
+    age_0_9 = db.Column(db.Integer, default=0)
+    age_10_19 = db.Column(db.Integer, default=0)
+    age_20_29 = db.Column(db.Integer, default=0)
+    age_30_39 = db.Column(db.Integer, default=0)
+    age_40_49 = db.Column(db.Integer, default=0)
+    age_50_59 = db.Column(db.Integer, default=0)
+    age_60_69 = db.Column(db.Integer, default=0)
+    age_70_79 = db.Column(db.Integer, default=0)
+    age_80_plus = db.Column(db.Integer, default=0)
+    # 强制存储北京时间（UTC+8）
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    )
+
+    def __repr__(self):
+        return f'<AgeDistribution group={self.group_id}>'
