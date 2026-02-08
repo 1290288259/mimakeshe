@@ -116,12 +116,17 @@ router.beforeEach((to, from, next) => {
 });
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-    // 如果访问的不是登录页面，并且 sessionStorage 中没有用户信息，重定向到登录页面
     const user = sessionStorage.getItem('User');
 
+    // 如果访问的不是登录页面，并且 sessionStorage 中没有用户信息，重定向到登录页面
     if (to.name !== 'login' && !user) {
         next({ name: 'login' });  // 没有用户信息，跳转到登录页
-    } else {
+    } 
+    // 如果已登录用户尝试访问登录页面，重定向到主页
+    else if (to.name === 'login' && user) {
+        next({ path: '/index/home' });
+    }
+    else {
         next();  // 放行
     }
 });

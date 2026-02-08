@@ -1,27 +1,44 @@
 <template>
   <div class="head-container">
-    <!-- 平均值按钮，点击后跳转到平均值页面 -->
-    <el-button type="primary" @click="onAvgClick">平均值</el-button>
-    <el-button type="success" @click="onAgeClick">年龄分布</el-button>
-    <el-button type="info" @click="onAgeAvgClick">年龄趋势</el-button>
-    <!-- 这里可以放其他内容 -->
+    <div class="nav-wrapper">
+      <el-radio-group v-model="currentRoute" size="large" @change="handleNavChange">
+        <el-radio-button label="/index/datast/avg">
+          <el-icon class="btn-icon"><DataLine /></el-icon> 指标平均值
+        </el-radio-button>
+        <el-radio-button label="/index/datast/agedbt">
+          <el-icon class="btn-icon"><PieChart /></el-icon> 年龄分布
+        </el-radio-button>
+        <el-radio-button label="/index/datast/ageavg">
+          <el-icon class="btn-icon"><TrendCharts /></el-icon> 年龄趋势
+        </el-radio-button>
+      </el-radio-group>
+    </div>
   </div>
 </template>
 
 <script>
+import { DataLine, PieChart, TrendCharts } from '@element-plus/icons-vue'
+
 export default {
   name: "DataStHead",
+  components: {
+    DataLine,
+    PieChart,
+    TrendCharts
+  },
+  data() {
+    return {
+      currentRoute: this.$route.path
+    }
+  },
+  watch: {
+    '$route.path'(val) {
+      this.currentRoute = val;
+    }
+  },
   methods: {
-    // 点击平均值按钮的处理函数
-    onAvgClick() {
-      // 跳转到平均值子路由页面
-      this.$router.push('/index/datast/avg');
-    },
-    onAgeClick() {
-      this.$router.push('/index/datast/agedbt');
-    },
-    onAgeAvgClick() {
-      this.$router.push('/index/datast/ageavg');
+    handleNavChange(val) {
+      this.$router.push(val);
     }
   }
 }
@@ -29,11 +46,44 @@ export default {
 
 <style scoped>
 .head-container {
-  padding: 20px;
-  border: 2px solid #409EFF; /* 添加蓝色边框 */
-  border-radius: 8px;         /* 圆角让边框更美观 */
-  background: #fff;           /* 背景色为白色，突出显示 */
-  box-shadow: 0 2px 8px rgba(64,158,255,0.08); /* 添加轻微阴影增强立体感 */
-  margin-bottom: 20px;        /* 与下方内容留出间距 */
+  background: #fff;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: var(--medical-card-shadow);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-wrapper {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-icon {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+:deep(.el-radio-button__inner) {
+  border-radius: 4px !important;
+  margin: 0 4px;
+  border: 1px solid #dcdfe6;
+  padding: 10px 24px;
+  font-weight: 500;
+  box-shadow: none !important;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background-color: var(--medical-primary);
+  border-color: var(--medical-primary);
+  box-shadow: none !important;
+  color: #fff;
+}
+
+:deep(.el-radio-button:first-child .el-radio-button__inner),
+:deep(.el-radio-button:last-child .el-radio-button__inner) {
+  border-radius: 4px !important;
 }
 </style>

@@ -3,7 +3,6 @@ from db_config import db  # 导入数据库配置
 from models import UserData, Shuju2  # 导入UserData和Shuju2模型
 from service.Paillier import PaillierEncryptor  # 导入Paillier加密器
 from config import FLOAT_PRECISION  # 导入全局变量FLOAT_PRECISION
-from service.yanzheng import calculate_averages
 import os # 导入os模块，用于文件系统操作
 import re # 导入re模块，用于正则表达式操作
 import json # 导入json模块
@@ -292,20 +291,6 @@ def deleteEncryptedData():
         db.session.rollback()
         return jsonify({'code': 500, 'msg': '删除失败: ' + str(e)})
 
-
-# 明文求平均值接口
-def getPlainAverages():
-    try:
-        from service.yanzheng import calculate_averages  # 直接导入函数
-        group_id = request.args.get('group_id', 1, type=int)
-        averages = calculate_averages(group_id=group_id)  # 直接调用函数
-        return jsonify({
-            'code': 200,
-            'msg': '平均值计算成功',
-            'data': averages
-        })
-    except Exception as e:
-        return jsonify({'code': 500, 'msg': '平均值计算失败: ' + str(e)})
 
 # 选择Paillier密钥对接口
 def select_keypair():

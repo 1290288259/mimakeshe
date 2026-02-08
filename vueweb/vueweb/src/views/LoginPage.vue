@@ -1,59 +1,67 @@
 <template>
   <div class="login-page">
+    <div class="background-overlay"></div>
+    
     <!-- 登录卡片 -->
     <div class="login-container" @keyup.enter="handleEnter">
-      <div class="login-header">
-        <h2>欢迎登录</h2>
-        <p class="subtitle">医疗数据分析系统</p>
+      <div class="brand-section">
+        <div class="logo-circle">
+          <el-icon :size="40" color="#fff"><FirstAidKit /></el-icon>
+        </div>
+        <h2 class="system-title">医疗数据分析系统</h2>
+        <p class="system-subtitle">Medical Data Analysis System</p>
       </div>
       
-      <el-form class="login-form">
-        <el-form-item class="form-item">
-          <el-input 
-            v-model="username" 
-            placeholder="请输入账号" 
-            class="input-field"
-            :prefix-icon="User"
-          />
-        </el-form-item>
-        
-        <el-form-item class="form-item">
-          <el-input 
-            v-model="password" 
-            show-password 
-            placeholder="请输入密码" 
-            class="input-field"
-            :prefix-icon="Lock"
-          />
-        </el-form-item>
+      <div class="form-section">
+        <h3 class="login-title">用户登录</h3>
+        <el-form class="login-form" size="large">
+          <el-form-item class="form-item">
+            <el-input 
+              v-model="username" 
+              placeholder="请输入账号" 
+              class="input-field"
+              :prefix-icon="User"
+            />
+          </el-form-item>
+          
+          <el-form-item class="form-item">
+            <el-input 
+              v-model="password" 
+              show-password 
+              placeholder="请输入密码" 
+              class="input-field"
+              :prefix-icon="Lock"
+            />
+          </el-form-item>
 
-        <div class="button-group">
-          <el-button type="primary" @click="login" class="login-button" :loading="loading" round>
-            登录系统
-          </el-button>
-          <el-button text bg @click="zhuce" class="register-button" round>
-            注册账号
-          </el-button>
-        </div>
-      </el-form>
+          <div class="button-group">
+            <el-button type="primary" @click="login" class="login-button" :loading="loading">
+              登录系统
+            </el-button>
+            <el-button text class="register-button" @click="zhuce">
+              注册新账号
+            </el-button>
+          </div>
+        </el-form>
+      </div>
     </div>
 
     <!-- 注册弹窗 -->
     <el-dialog 
       v-model="dialogVisible" 
       title="用户注册" 
-      width="420px" 
+      width="450px" 
       align-center
-      class="register-dialog custom-dialog"
-      :show-close="false"
+      class="custom-dialog"
+      :close-on-click-modal="false"
       destroy-on-close
     >
-      <el-form :model="form" label-width="70px" class="register-form">
+      <el-form :model="form" label-width="80px" class="register-form" size="large">
         <el-form-item label="账号">
-          <el-input v-model="form.userName" placeholder="请输入账号" :prefix-icon="User" />
+          <el-input v-model="form.userName" placeholder="设置您的账号" :prefix-icon="User" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="form.userPassword" show-password placeholder="请输入密码" :prefix-icon="Lock" />
+          <el-input v-model="form.userPassword" show-password placeholder="设置您的密码" :prefix-icon="Lock" />
         </el-form-item>
         <el-form-item label="姓名">
           <el-input v-model="form.name" placeholder="请输入真实姓名" />
@@ -67,8 +75,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false" class="cancel-btn">取消</el-button>
-          <el-button type="primary" @click="register" class="submit-btn">立即注册</el-button>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="register">提交注册</el-button>
         </div>
       </template>
     </el-dialog>
@@ -76,10 +84,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, reactive } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, FirstAidKit } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const router = useRouter()
@@ -98,41 +106,10 @@ const form = reactive({
   userPhone: '',
 })
 
-// 背景设置逻辑
-const setBackground = () => {
-  document.documentElement.style.height = '100%';
-  document.body.style.height = '100%';
-  document.body.style.margin = '0';
-  document.body.style.padding = '0';
-  document.body.style.backgroundImage = "url('" + require('@/assets/beijing.png') + "')";
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundRepeat = 'no-repeat';
-  document.body.style.backgroundAttachment = 'fixed';
+const handleEnter = () => {
+  login()
 }
 
-const clearBackground = () => {
-  document.documentElement.style.height = '';
-  document.body.style.height = '';
-  document.body.style.margin = '';
-  document.body.style.padding = '';
-  document.body.style.backgroundImage = '';
-  document.body.style.backgroundSize = '';
-  document.body.style.backgroundPosition = '';
-  document.body.style.backgroundRepeat = '';
-  document.body.style.backgroundAttachment = '';
-}
-
-// 生命周期钩子
-onMounted(() => {
-  setBackground()
-})
-
-onBeforeUnmount(() => {
-  clearBackground()
-})
-
-// 登录逻辑
 const login = () => {
   if (!username.value || !password.value) {
     ElMessage.warning('请输入账号和密码')
@@ -140,40 +117,30 @@ const login = () => {
   }
 
   loading.value = true
-  
-  axios.post("/user/login", { userName: username.value, userPassword: password.value })
-      .then(res => res.data)
-      .then(res => {
-        loading.value = false
-        if (res.code == 200) {
-          ElMessage.success('登录成功')
-          sessionStorage.setItem('User', JSON.stringify(res.data.user))
-          sessionStorage.setItem('ModuleList', JSON.stringify(res.data.moduleList))
-          router.replace('/Index/home')
-        } else if (res.code == 401) {
-          ElMessage.error(res.msg)
-        } else {
-          ElMessage.error('登录失败')
-        }
-      })
-      .catch(error => {
-        loading.value = false
-        console.error('登录请求发生错误', error)
-        ElMessage.error('登录请求失败，请稍后重试')
-      })
+  axios.post('/user/login', {
+    userName: username.value,
+    userPassword: password.value
+  })
+  .then(res => {
+    if (res.data.code === 200) {
+      ElMessage.success('登录成功')
+      sessionStorage.setItem("User", JSON.stringify(res.data.data.user))
+      sessionStorage.setItem("ModuleList", JSON.stringify(res.data.data.moduleList))
+      router.push('/index/home')
+    } else {
+      ElMessage.error(res.data.msg || '登录失败')
+    }
+  })
+  .catch(err => {
+    ElMessage.error('登录服务连接失败: ' + err.message)
+  })
+  .finally(() => {
+    loading.value = false
+  })
 }
 
-// 注册相关逻辑
 const zhuce = () => {
   dialogVisible.value = true
-  // 重置表单
-  Object.assign(form, {
-    userName: '',
-    userPassword: '',
-    name: '',
-    userAddress: '',
-    userPhone: '',
-  })
 }
 
 const register = () => {
@@ -182,187 +149,184 @@ const register = () => {
     return
   }
   
-  axios.post("/user/register", form).then(res => res.data).then(res => {
-      if (res.code == 200){
-        ElMessage.success('注册成功')
-        dialogVisible.value = false
-      } else {
-        ElMessage.error(res.msg || '注册失败')
-      }
-  }).catch(() => {
-    ElMessage.error('注册请求失败')
+  axios.post('/user/register', {
+    userName: form.userName,
+    userPassword: form.userPassword,
+    name: form.name,
+    userAddress: form.userAddress,
+    userPhone: form.userPhone
   })
-}
-
-const handleEnter = () => {
-  login()
+  .then(res => {
+    if (res.data.code === 200) {
+      ElMessage.success('注册成功，请登录')
+      dialogVisible.value = false
+      // 清空表单
+      Object.keys(form).forEach(key => form[key] = '')
+    } else {
+      ElMessage.error(res.data.msg || '注册失败')
+    }
+  })
+  .catch(err => {
+    ElMessage.error('注册服务连接失败: ' + err.message)
+  })
 }
 </script>
 
 <style scoped>
 .login-page {
   height: 100vh;
-  width: 100%;
+  width: 100vw;
   display: flex;
-  align-items: center;
   justify-content: center;
-  /* 确保父容器背景透明，显示body背景 */
-  background: transparent; 
+  align-items: center;
+  position: relative;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  overflow: hidden;
 }
 
-/* 玻璃拟态卡片 */
+/* 医疗风格背景装饰 */
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(0, 94, 184, 0.05) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(65, 182, 230, 0.1) 0%, transparent 25%);
+  z-index: 0;
+}
+
 .login-container {
-  width: 400px;
-  padding: 50px 40px;
-  background: rgba(255, 255, 255, 0.15); /* 浅色半透明背景 */
-  backdrop-filter: blur(20px); /* 毛玻璃效果 */
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3); /* 边框高亮 */
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  display: flex;
+  width: 800px;
+  height: 480px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* 左侧品牌区 */
+.brand-section {
+  flex: 1;
+  background: linear-gradient(135deg, var(--medical-primary) 0%, #004b93 100%);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.login-container:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-.login-header {
+  color: #fff;
+  padding: 40px;
   text-align: center;
-  margin-bottom: 40px;
-  color: #1976D2;
 }
 
-.login-header h2 {
+.logo-circle {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 24px;
+  backdrop-filter: blur(5px);
+}
+
+.system-title {
   font-size: 28px;
-  margin-bottom: 10px;
   font-weight: 600;
-  letter-spacing: 2px;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  margin: 0 0 10px 0;
+  letter-spacing: 1px;
 }
 
-.subtitle {
+.system-subtitle {
   font-size: 14px;
-  opacity: 0.9;
-  letter-spacing: 1px;
+  opacity: 0.8;
+  margin: 0;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+/* 右侧表单区 */
+.form-section {
+  flex: 1.2;
+  padding: 40px 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-title {
+  font-size: 22px;
+  color: var(--medical-text);
+  margin-bottom: 30px;
   font-weight: 500;
+  text-align: left;
 }
 
 .login-form {
   width: 100%;
 }
 
-.form-item {
-  margin-bottom: 25px;
-}
-
-/* 深度选择器修改Element Plus输入框样式 */
-:deep(.input-field .el-input__wrapper) {
-  background-color: rgba(255, 255, 255, 0.4) !important;
+.input-field :deep(.el-input__wrapper) {
+  background-color: #f7f9fc;
   box-shadow: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 30px;
-  padding: 8px 15px;
-  transition: all 0.3s ease;
+  border: 1px solid #e0e6ed;
+  transition: all 0.3s;
 }
 
-:deep(.input-field .el-input__wrapper.is-focus) {
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  border-color: #1976D2;
-  box-shadow: 0 0 10px rgba(25, 118, 210, 0.2) !important;
-}
-
-:deep(.input-field .el-input__inner) {
-  color: #1976D2 !important;
-  height: 40px;
-  font-weight: 500;
-}
-
-:deep(.input-field .el-input__inner::placeholder) {
-  color: rgba(25, 118, 210, 0.5);
-}
-
-:deep(.input-field .el-icon) {
-  color: #1976D2;
+.input-field :deep(.el-input__wrapper.is-focus) {
+  background-color: #fff;
+  border-color: var(--medical-primary);
+  box-shadow: 0 0 0 1px var(--medical-primary) !important;
 }
 
 .button-group {
+  margin-top: 30px;
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-top: 10px;
-  width: 100%;
-  align-items: center;
 }
 
 .login-button {
   width: 100%;
-  height: 45px;
+  height: 44px;
   font-size: 16px;
-  letter-spacing: 4px;
-  background: linear-gradient(135deg, #409EFF 0%, #1976D2 100%);
-  border: none;
-  font-weight: bold;
-  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
-  transition: all 0.3s;
+  letter-spacing: 2px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 .login-button:hover {
-  background: linear-gradient(135deg, #1976D2 0%, #409EFF 100%);
-  transform: scale(1.02);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 94, 184, 0.3);
 }
 
 .register-button {
   width: 100%;
-  height: 45px;
-  color: #1976D2 !important;
-  border: 1px solid rgba(25, 118, 210, 0.3) !important;
-  background: rgba(255, 255, 255, 0.4) !important;
-  font-weight: 600;
-  letter-spacing: 2px;
+  color: var(--medical-text-secondary);
 }
 
 .register-button:hover {
-  background: rgba(255, 255, 255, 0.6) !important;
-  border-color: #1976D2 !important;
+  color: var(--medical-primary);
 }
 
-/* 注册弹窗样式 */
-:deep(.custom-dialog) {
-  border-radius: 16px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.95);
-}
-
-:deep(.custom-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  text-align: center;
-}
-
-:deep(.custom-dialog .el-dialog__title) {
-  font-weight: 600;
-  color: #333;
-}
-
-.register-form {
-  padding: 10px 20px 0;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding-bottom: 10px;
-}
-
-.dialog-footer .el-button {
-  padding: 10px 30px;
-  border-radius: 20px;
+/* 响应式调整 */
+@media (max-width: 850px) {
+  .login-container {
+    width: 90%;
+    height: auto;
+    flex-direction: column;
+  }
+  
+  .brand-section {
+    padding: 30px;
+  }
+  
+  .form-section {
+    padding: 30px;
+  }
 }
 </style>

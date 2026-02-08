@@ -1,48 +1,67 @@
 <template>
   <div class="user-center">
-    <el-card class="box-card">
-      <template #header>
-        <div class="card-header">
-          <span>个人中心</span>
+    <div class="profile-card-wrapper">
+      <el-card class="box-card" shadow="hover">
+        <template #header>
+          <div class="card-header">
+            <el-icon class="header-icon"><User /></el-icon>
+            <span>个人资料卡</span>
+          </div>
+        </template>
+        
+        <div class="profile-content">
+          <div class="avatar-section">
+            <el-avatar :size="80" icon="UserFilled" class="user-avatar" />
+            <h3 class="user-display-name">{{ filteredUser.name || 'User' }}</h3>
+            <el-tag type="success" size="small" round>在线</el-tag>
+          </div>
+
+          <el-descriptions :column="1" border class="user-descriptions">
+            <el-descriptions-item label="账号ID">{{ filteredUser.user_id }}</el-descriptions-item>
+            <el-descriptions-item label="用户名">{{ filteredUser.user_name }}</el-descriptions-item>
+            <el-descriptions-item label="联系电话">{{ filteredUser.user_phone || '未填写' }}</el-descriptions-item>
+            <el-descriptions-item label="联系地址">{{ filteredUser.user_address || '未填写' }}</el-descriptions-item>
+            <el-descriptions-item label="权限等级">
+              <el-tag size="small">{{ filteredUser.permission_id === 0 ? '超级管理员' : (filteredUser.permission_id === 1 ? '管理员' : '普通用户') }}</el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
         </div>
-      </template>
-      <el-collapse accordion>
-        <el-collapse-item v-for="(value, key) in filteredUser" :key="key" :name="key">
-          <template #title>
-            <span>{{ key }}</span>
-          </template>
-          <div class="user-info-item">{{ value }}</div>
-        </el-collapse-item>
-      </el-collapse>
-      <div class="edit-button-wrapper">
-        <el-button type="primary" @click="updateProfile">编辑资料</el-button>
-      </div>
-    </el-card>
+        
+        <div class="edit-button-wrapper">
+          <el-button type="primary" class="edit-btn" @click="updateProfile">
+            <el-icon><Edit /></el-icon>编辑资料
+          </el-button>
+        </div>
+      </el-card>
+    </div>
 
     <el-dialog
         v-model="dialogVisible1"
-        title="Tips"
-        width="500"
+        title="编辑个人资料"
+        width="500px"
         :before-close="handleClose"
+        destroy-on-close
+        class="medical-dialog"
     >
       <el-form
           :model="form"
-          label-width="auto"
-          style="max-width: 600px"
+          label-width="80px"
+          label-position="right"
+          class="edit-form"
       >
-        <el-form-item label="账号：">
-          <el-input v-model="form.userName" />
+        <el-form-item label="账号">
+          <el-input v-model="form.userName" disabled />
         </el-form-item>
-        <el-form-item label="密码：">
-          <el-input v-model="form.userPassword" />
+        <el-form-item label="密码">
+          <el-input v-model="form.userPassword" type="password" show-password />
         </el-form-item>
-        <el-form-item label="名字：">
+        <el-form-item label="姓名">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="住址：">
+        <el-form-item label="住址">
           <el-input v-model="form.userAddress" />
         </el-form-item>
-        <el-form-item label="电话：">
+        <el-form-item label="电话">
           <el-input v-model="form.userPhone" />
         </el-form-item>
       </el-form>
@@ -50,7 +69,7 @@
         <div class="dialog-footer">
           <el-button @click="dialogVisible1 = false">取消</el-button>
           <el-button type="primary" @click="frompost">
-            提交
+            保存修改
           </el-button>
         </div>
       </template>
@@ -60,8 +79,10 @@
 
 <script setup>
 import { ref } from 'vue';
-import {ElMessage} from "element-plus";
+import { ElMessage } from "element-plus";
+import { User, Edit, UserFilled } from '@element-plus/icons-vue';
 import axios from 'axios';
+
 // 从sessionStorage获取用户信息字符串
 const userStr = sessionStorage.getItem('User');
 const user = userStr? JSON.parse(userStr) : {};
@@ -139,28 +160,85 @@ const handleClose = () => {
 
 <style scoped>
 .user-center {
-  width: 600px;
-  margin: 50px auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.profile-card-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .box-card {
+  border-radius: 12px;
   border: none;
+  box-shadow: var(--medical-card-shadow);
+  overflow: hidden;
 }
 
 .card-header {
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--medical-primary);
+  padding: 8px 0;
 }
 
-.user-info-item {
-  margin-left: 10px;
+.header-icon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.profile-content {
+  padding: 20px;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.user-avatar {
+  background-color: var(--medical-secondary);
+  color: white;
+  margin-bottom: 12px;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-display-name {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: var(--medical-text);
+}
+
+.user-descriptions :deep(.el-descriptions__label) {
+  width: 120px;
+  justify-content: flex-end;
+  font-weight: 500;
+  color: var(--medical-text-secondary);
 }
 
 .edit-button-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 24px;
+  margin-bottom: 10px;
+}
+
+.edit-btn {
+  width: 200px;
+  height: 40px;
+  font-size: 16px;
+  border-radius: 20px;
+}
+
+.edit-form {
+  padding: 0 20px;
 }
 </style>

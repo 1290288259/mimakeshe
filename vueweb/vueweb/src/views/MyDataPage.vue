@@ -1,40 +1,75 @@
 <template>
   <div class="data-container">
-    <el-table :data="tableData" style="width: 100%">
-      <el-table-column prop="id" label="ID" width="120" />
-      <el-table-column prop="cirrhosis" label="肝硬化" width="120" />
-      <el-table-column prop="age" label="年龄" width="100" />
-      <el-table-column prop="sex" label="性别" width="100" />
-      <el-table-column prop="cholesterol" label="胆固醇" width="120" />
-      <el-table-column prop="triglyceride" label="甘油三酯" width="120" />
-      <el-table-column prop="HDL" label="高密度脂蛋白" width="140" />
-      <el-table-column prop="LDL" label="低密度脂蛋白" width="140" />
-      <el-table-column prop="PathDiagNum" label="病理诊断编号" width="140" />
-      <el-table-column prop="BMI" label="体重指数" width="120" />
-      <el-table-column prop="ALT" label="谷丙转氨酶" width="120" />
-      <el-table-column prop="AST" label="谷草转氨酶" width="120" />
-      <el-table-column prop="glucose" label="血糖" width="100" />
-      <el-table-column label="操作" width="120">
-        <template #default="scope">
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="analyzeData(scope.row.id)"
-            :loading="loadingId === scope.row.id"
-          >
-            分析
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="medical-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <div class="header-title">
+            <el-icon class="header-icon"><List /></el-icon>
+            <h3>患者数据列表</h3>
+          </div>
+          <el-tag type="primary" effect="plain">共 {{ tableData.length }} 条记录</el-tag>
+        </div>
+      </template>
+    
+      <el-table 
+        :data="tableData" 
+        style="width: 100%" 
+        stripe 
+        border
+        :header-cell-style="{ background: 'var(--medical-secondary)', color: 'var(--medical-primary)', fontWeight: 'bold' }"
+        row-key="id"
+      >
+        <el-table-column prop="id" label="ID" width="80" align="center" fixed />
+        <el-table-column prop="cirrhosis" label="肝硬化" width="100" align="center">
+          <template #default="scope">
+            <el-tag :type="scope.row.cirrhosis === 1 ? 'danger' : 'success'" effect="light">
+              {{ scope.row.cirrhosis === 1 ? '有' : '无' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="age" label="年龄" width="80" align="center" />
+        <el-table-column prop="sex" label="性别" width="80" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.sex === 1"><el-icon><Male /></el-icon> 男</span>
+            <span v-else-if="scope.row.sex === 2"><el-icon><Female /></el-icon> 女</span>
+            <span v-else>未知</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="cholesterol" label="胆固醇" width="100" align="center" />
+        <el-table-column prop="triglyceride" label="甘油三酯" width="100" align="center" />
+        <el-table-column prop="HDL" label="HDL" width="100" align="center" />
+        <el-table-column prop="LDL" label="LDL" width="100" align="center" />
+        <el-table-column prop="PathDiagNum" label="病理编号" width="120" align="center" />
+        <el-table-column prop="BMI" label="BMI" width="100" align="center" />
+        <el-table-column prop="ALT" label="ALT" width="100" align="center" />
+        <el-table-column prop="AST" label="AST" width="100" align="center" />
+        <el-table-column prop="glucose" label="血糖" width="100" align="center" />
+        <el-table-column label="操作" width="120" fixed="right" align="center">
+          <template #default="scope">
+            <el-button 
+              type="primary" 
+              size="small" 
+              plain
+              @click="analyzeData(scope.row.id)"
+              :loading="loadingId === scope.row.id"
+              class="action-btn"
+            >
+              分析
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
+import { List, Male, Female, DataLine } from '@element-plus/icons-vue';
 
 export default {
+  components: { List, Male, Female, DataLine },
   data() {
     return {
       tableData: [], // 存储用户数据
@@ -94,7 +129,40 @@ export default {
 <style scoped>
 .data-container {
   padding: 20px;
-  max-width: 1700px;
+  max-width: 1400px;
   margin: 0 auto;
+}
+
+.medical-card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  font-size: 20px;
+  color: var(--medical-primary);
+  background-color: var(--medical-secondary);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
 }
 </style>

@@ -1,6 +1,36 @@
-<script setup>
+<template>
+  <div class="header-bar">
+    <!-- 左侧大标题 -->
+    <div class="main-title-wrapper">
+      <div class="main-title">
+        <span class="title-text">医疗数据分析系统</span>
+        <span class="title-en">Medical Data Analysis System</span>
+      </div>
+    </div>
+    <!-- 右侧工具栏 -->
+    <div class="toolbar">
+      <div class="user-info">
+        <el-tag :type="tagType" effect="light" round class="role-tag">{{ tagText }}</el-tag>
+        <span class="user-name">{{name}}</span>
+      </div>
+      <el-dropdown trigger="click">
+        <div class="setting-btn">
+          <el-icon :size="20"><Setting /></el-icon>
+        </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="logout">
+              <el-icon><SwitchButton /></el-icon>退出登录
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
+  </div>
+</template>
 
-import {Setting} from "@element-plus/icons-vue";
+<script setup>
+import { Setting, SwitchButton } from "@element-plus/icons-vue";
 
 const user = JSON.parse(sessionStorage.getItem('User'));
 const name = user.name;
@@ -24,79 +54,92 @@ switch (permissionId) {
     break;
   default:
     tagType = 'info';
-    tagText = '未知权限用户';
+    tagText = '未知权限';
 }
-function logout() {
-  // 清除 sessionStorage 中的用户信息
-  sessionStorage.removeItem('User');
-  // 重置路由
-  sessionStorage.removeItem('ModuleList');
 
-  // 重定向到登录页面
-  window.location.href = '/login';  // 假设 login 页面路径是 '/login'
+function logout() {
+  sessionStorage.removeItem('User');
+  sessionStorage.removeItem('ModuleList');
+  window.location.href = '/login';
 }
 </script>
 
-<template>
-  <div class="header-bar">
-    <!-- 左侧大标题，宽度80%，居中显示 -->
-    <div class="main-title-wrapper">
-      <div class="main-title">医疗数据分析系统</div>
-    </div>
-    <!-- 右侧工具栏 -->
-    <div class="toolbar">
-      <el-dropdown>
-        <el-icon style="margin-right: 8px; margin-top: 1px;">
-          <setting />
-        </el-icon>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item @click="logout">退出登录</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-      <el-tag :type="tagType">{{ tagText }}</el-tag>
-      <span style="font-size: 14px; font-weight: 500; color: #333;">{{name}}</span>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-/* 整体横向排列，左右分布 */
 .header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px 0 24px;
+  padding: 0 32px;
   background: #fff;
   height: 64px;
-  box-shadow: 0 2px 8px rgba(64,158,255,0.08);
-  margin-bottom: 20px;
+  box-shadow: var(--medical-card-shadow);
+  border-bottom: 1px solid #eef2f7;
+  z-index: 100;
 }
 
-/* 包裹大标题的div，占80%宽度，并让标题居中 */
 .main-title-wrapper {
-  width: 80%;
+  flex: 1;
   display: flex;
-  justify-content: center; /* 水平居中 */
-  align-items: center;     /* 垂直居中 */
-  height: 100%;
+  align-items: center;
 }
 
-/* 大标题样式，浅蓝色，居中 */
 .main-title {
-  font-size: 32px;
-  font-weight: bold;
-  color: #5dade2; /* 浅蓝色 */
-  letter-spacing: 4px;
-  text-align: center;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* 工具栏内容右对齐 */
+.title-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--medical-primary);
+  letter-spacing: 1px;
+}
+
+.title-en {
+  font-size: 10px;
+  color: var(--medical-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-tag {
+  font-weight: 500;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--medical-text);
+}
+
+.setting-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--medical-text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.setting-btn:hover {
+  background-color: var(--medical-bg);
+  color: var(--medical-primary);
 }
 </style>

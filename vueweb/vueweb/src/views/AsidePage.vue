@@ -1,5 +1,4 @@
 <template>
-
   <el-menu :default-active="$route.path" class="menu" :router="true">
     <el-menu-item index="/index/home" :to="{ path: '/index/home' }">
       <el-icon><House /></el-icon>
@@ -7,7 +6,7 @@
     </el-menu-item>
     <!-- 循环生成动态菜单项 -->
     <el-menu-item v-for="(module, index) in ModuleList" :key="index" :index="module.moduleRouter" :to="{ path: module.moduleRouter }">
-      <el-icon><House /></el-icon>
+      <el-icon><DataLine /></el-icon>
       <span>{{ module.moduleDescription }}</span>
     </el-menu-item>
   </el-menu>
@@ -16,12 +15,13 @@
 
 <script>
 import { defineComponent } from 'vue';
-import { House } from '@element-plus/icons-vue';  // 引入你使用的图标
+import { House, DataLine } from '@element-plus/icons-vue';
 
 export default defineComponent({
   name: "AsidePage",
   components: {
-    House
+    House,
+    DataLine
   },
   data() {
     return {
@@ -40,57 +40,49 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 优化菜单样式为更现代的浅蓝渐变主题，并增加圆角和阴影 */
 .menu {
-  background: #fff;           /* 只保留纯白色背景 */
-  color: #1565c0;             /* 深蓝色字体 */
+  background: #fff;
   height: 100%;
-  border-radius: 18px;        /* 圆角 */
-  padding-top: 12px;
-  padding-bottom: 12px;
-  margin: 12px;
-  border: none;               /* 无边框 */
-  box-shadow: none;           /* 无阴影 */
+  border-right: none;
+  padding-top: 8px;
 }
 
 .el-menu-item {
-  color: #1976d2;            /* 普通项字体颜色更柔和 */
-  font-size: 15px;
-  border-radius: 10px;       /* 菜单项圆角 */
-  margin: 4px 8px;
-  transition: background 0.2s, color 0.2s;
+  color: var(--medical-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 4px 12px;
+  border-radius: 8px;
+  height: 48px;
+  line-height: 48px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .el-menu-item:hover {
-  background-color: #e1f5fe; /* 更亮的浅蓝色悬浮 */
-  color: #0d47a1;
-  box-shadow: 0 2px 8px 0 rgba(33, 150, 243, 0.10); /* 悬浮时有轻微阴影 */
+  background-color: var(--medical-bg);
+  color: var(--medical-primary);
+}
+
+.el-menu-item.is-active {
+  background-color: #e6f6ff;
+  color: var(--medical-primary);
+  font-weight: 600;
+  box-shadow: inset 4px 0 0 var(--medical-primary);
+  border-radius: 0 8px 8px 0;
+  margin-left: 0;
+  margin-right: 12px;
 }
 
 .el-menu-item .el-icon {
-  margin-right: 10px; /* 图标与文字之间的间距 */
+  margin-right: 12px;
+  font-size: 18px;
 }
 
-.el-menu-item span {
-  vertical-align: middle;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-/* 当前选中项的样式 */
-.el-menu-item.is-active {
-  background-color: #90caf9; /* 选中项更深的浅蓝色 */
-  color: #0d47a1;
-  font-weight: bold;
-  box-shadow: 0 2px 12px 0 rgba(33, 150, 243, 0.15);
-}
-
-/* 响应式设计：在较小屏幕下调整菜单宽度 */
+/* 响应式调整 */
 @media (max-width: 768px) {
   .menu {
-    width: 200px;
+    width: 100%;
     margin: 0;
-    border-radius: 0;
   }
 }
 </style>

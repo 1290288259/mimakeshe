@@ -1,129 +1,189 @@
 <template>
   <div class="data-container">
-    <el-scrollbar>
-      <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 20px;">
-        <el-input v-model="searchKeyword" placeholder="请输入用户ID或数据ID" style="width: 200px; margin-right: 10px;"/>
-        <el-button type="primary" @click="fetchDataByKeyword" style="width: 100px; margin-right: 10px;">查询</el-button>
-        <el-button type="success" @click="fetchAllData" style="width: 100px; margin-right: 30px;">查看全部</el-button>
+    <el-card class="medical-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <div class="header-title">
+            <el-icon class="header-icon"><Files /></el-icon>
+            <h3>加密数据管理</h3>
+          </div>
+          <div class="header-actions">
+             <!-- 密钥操作区域 -->
+             <el-select v-model="selectedKeyIndex" placeholder="选择密钥" style="width: 180px; margin-right: 10px;" size="default">
+              <template #prefix>
+                <el-icon><Key /></el-icon>
+              </template>
+              <el-option
+                v-for="keypair in keypairNames"
+                :key="keypair.id" 
+                :label="keypair.label" 
+                :value="keypair.id">
+              </el-option>
+            </el-select>
+            <el-button type="warning" plain @click="selectKeypair" style="margin-right: 10px;">
+              <el-icon><Switch /></el-icon> 切换密钥
+            </el-button>
+            <el-button type="success" plain @click="generateNewKeypair">
+              <el-icon><Plus /></el-icon> 新增密钥
+            </el-button>
+          </div>
+        </div>
+      </template>
 
-        <!-- 密钥操作区域 -->
-        <el-select v-model="selectedKeyIndex" placeholder="选择密钥" style="width: 140px; margin-right: 10px;">
-          <el-option
-            v-for="keypair in keypairNames"
-            :key="keypair.id" 
-            :label="keypair.label" 
-            :value="keypair.id">
-          </el-option>
-        </el-select>
-        <el-button type="warning" @click="selectKeypair" style="margin-right: 20px;">选择密钥</el-button>
-
-        <!-- 新增密钥 -->
-        <el-button type="success" @click="generateNewKeypair">新增密钥</el-button>
+      <div class="filter-section">
+        <el-input 
+          v-model="searchKeyword" 
+          placeholder="请输入用户ID或数据ID" 
+          style="width: 250px; margin-right: 10px;"
+          clearable
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" @click="fetchDataByKeyword">
+          <el-icon><Search /></el-icon> 查询
+        </el-button>
+        <el-button @click="fetchAllData">
+          <el-icon><Refresh /></el-icon> 重置/全部
+        </el-button>
       </div>
 
-      <el-table :data="tableData" style="width: 100%" border>
-        <el-table-column prop="id" label="ID" width="120" />
-        <el-table-column prop="user_id" label="用户ID" width="100" />
-        <el-table-column prop="cirrhosis" label="肝硬化" width="80" />
-        <el-table-column prop="age" label="年龄" width="80" />
-        <el-table-column prop="sex" label="性别" width="80" :formatter="formatSex" /> <!-- 添加 formatter 属性 -->
-        <el-table-column prop="cholesterol" label="胆固醇" width="100" />
-        <el-table-column prop="triglyceride" label="甘油三酯" width="100" />
-        <el-table-column prop="HDL" label="高密度脂蛋白" width="110" />
-        <el-table-column prop="LDL" label="低密度脂蛋白" width="110" />
-        <el-table-column prop="PathDiagNum" label="病理诊断编号" width="140" />
-        <el-table-column prop="BMI" label="体重指数" width="100" />
-        <el-table-column prop="ALT" label="谷丙转氨酶" width="100" />
-        <el-table-column prop="AST" label="谷草转氨酶" width="100" />
-        <el-table-column prop="glucose" label="血糖" width="100" />
-        <!-- 新增操作列 -->
-        <el-table-column label="操作" width="140">
+      <el-table 
+        :data="tableData" 
+        style="width: 100%" 
+        border 
+        stripe
+        :header-cell-style="{ background: 'var(--medical-secondary)', color: 'var(--medical-primary)', fontWeight: 'bold' }"
+      >
+        <el-table-column prop="id" label="ID" width="80" align="center" fixed />
+        <el-table-column prop="user_id" label="用户ID" width="100" align="center" />
+        <el-table-column prop="cirrhosis" label="肝硬化" width="80" align="center">
+           <template #default="scope">
+            <el-tag :type="scope.row.cirrhosis == 1 ? 'danger' : 'success'" size="small">
+              {{ scope.row.cirrhosis == 1 ? '有' : '无' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="age" label="年龄" width="80" align="center" />
+        <el-table-column prop="sex" label="性别" width="80" align="center" :formatter="formatSex">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+             <span v-if="scope.row.sex === 1"><el-icon><Male /></el-icon> 男</span>
+             <span v-else-if="scope.row.sex === 2"><el-icon><Female /></el-icon> 女</span>
+             <span v-else>未知</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="cholesterol" label="胆固醇" width="100" align="center" />
+        <el-table-column prop="triglyceride" label="甘油三酯" width="100" align="center" />
+        <el-table-column prop="HDL" label="HDL" width="100" align="center" />
+        <el-table-column prop="LDL" label="LDL" width="100" align="center" />
+        <el-table-column prop="PathDiagNum" label="病理诊断" width="120" align="center" />
+        <el-table-column prop="BMI" label="BMI" width="100" align="center" />
+        <el-table-column prop="ALT" label="ALT" width="100" align="center" />
+        <el-table-column prop="AST" label="AST" width="100" align="center" />
+        <el-table-column prop="glucose" label="血糖" width="100" align="center" />
+        <el-table-column label="操作" width="180" fixed="right" align="center">
+          <template #default="scope">
+            <el-button type="primary" link size="small" @click="handleEdit(scope.row)">
+              <el-icon><Edit /></el-icon> 编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(scope.row)">
+              <el-icon><Delete /></el-icon> 删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
-      <!-- 编辑弹窗 -->
-      <el-dialog
-        v-model="editDialogVisible"
-        title="编辑数据"
-        width="600px"
-      >
-        <!-- 编辑表单，绑定editForm对象 -->
-        <el-form :model="editForm" label-width="120px">
-          <el-form-item label="ID">
-            <el-input v-model="editForm.id" disabled />
-          </el-form-item>
-          <el-form-item label="用户ID">
-            <el-input v-model="editForm.user_id" />
-          </el-form-item>
-          <el-form-item label="肝硬化">
-            <el-input v-model="editForm.cirrhosis" />
-          </el-form-item>
-          <el-form-item label="年龄">
-            <el-input v-model="editForm.age" />
-          </el-form-item>
-          <el-form-item label="性别">
-            <el-radio-group v-model="editForm.sex"> <!-- 将el-input替换为el-radio-group -->
-              <el-radio :label="1">男性</el-radio>
-              <el-radio :label="2">女性</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="胆固醇">
-            <el-input v-model="editForm.cholesterol" />
-          </el-form-item>
-          <el-form-item label="甘油三酯">
-            <el-input v-model="editForm.triglyceride" />
-          </el-form-item>
-          <el-form-item label="高密度脂蛋白">
-            <el-input v-model="editForm.HDL" />
-          </el-form-item>
-          <el-form-item label="低密度脂蛋白">
-            <el-input v-model="editForm.LDL" />
-          </el-form-item>
-          <el-form-item label="病理诊断编号">
-            <el-input v-model="editForm.PathDiagNum" />
-          </el-form-item>
-          <el-form-item label="体重指数">
-            <el-input v-model="editForm.BMI" />
-          </el-form-item>
-          <el-form-item label="谷丙转氨酶">
-            <el-input v-model="editForm.ALT" />
-          </el-form-item>
-          <el-form-item label="谷草转氨酶">
-            <el-input v-model="editForm.AST" />
-          </el-form-item>
-          <el-form-item label="血糖">
-            <el-input v-model="editForm.glucose" />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="editDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitEdit">提交</el-button>
-          </div>
-        </template>
-      </el-dialog>
 
-      <el-pagination
-        v-if="total > 0"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total="total"
-        layout="total, prev, pager, next"
-        @current-change="handleCurrentChange"
-        style="margin-top: 20px; text-align: center;"
-      />
-    </el-scrollbar>
+      <div class="pagination-container">
+        <el-pagination
+          v-if="total > 0"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next, jumper"
+          @current-change="handleCurrentChange"
+          background
+        />
+      </div>
+    </el-card>
+
+    <!-- 编辑弹窗 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑临床数据"
+      width="700px"
+      destroy-on-close
+      center
+    >
+      <el-form :model="editForm" label-width="120px" class="edit-form" :inline="true">
+        <el-divider content-position="left">基本信息</el-divider>
+        <el-form-item label="ID">
+          <el-input v-model="editForm.id" disabled style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="用户ID">
+          <el-input v-model="editForm.user_id" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="年龄">
+          <el-input v-model="editForm.age" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-radio-group v-model="editForm.sex">
+            <el-radio :label="1">男</el-radio>
+            <el-radio :label="2">女</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        
+        <el-divider content-position="left">生理指标</el-divider>
+        <el-form-item label="肝硬化">
+          <el-input v-model="editForm.cirrhosis" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="BMI">
+          <el-input v-model="editForm.BMI" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="血糖">
+          <el-input v-model="editForm.glucose" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="病理诊断">
+          <el-input v-model="editForm.PathDiagNum" style="width: 180px"/>
+        </el-form-item>
+
+        <el-divider content-position="left">血脂与肝功</el-divider>
+        <el-form-item label="胆固醇">
+          <el-input v-model="editForm.cholesterol" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="甘油三酯">
+          <el-input v-model="editForm.triglyceride" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="HDL">
+          <el-input v-model="editForm.HDL" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="LDL">
+          <el-input v-model="editForm.LDL" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="ALT">
+          <el-input v-model="editForm.ALT" style="width: 180px"/>
+        </el-form-item>
+        <el-form-item label="AST">
+          <el-input v-model="editForm.AST" style="width: 180px"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitEdit">保存修改</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Search, Refresh, Edit, Delete, Files, Key, Plus, Switch, Male, Female } from '@element-plus/icons-vue';
 
 export default {
+  components: { Search, Refresh, Edit, Delete, Files, Key, Plus, Switch, Male, Female },
   data() {
     return {
       tableData: [], // 存储数据列表
@@ -346,5 +406,85 @@ export default {
   padding: 20px;
   max-width: 1700px;
   margin: 0 auto;
+}
+
+.medical-card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--medical-primary);
+}
+
+.header-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header-icon {
+  font-size: 20px;
+  background-color: var(--medical-secondary);
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid var(--medical-primary);
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+:deep(.el-table) {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:deep(.el-button--primary) {
+  background-color: var(--medical-primary);
+  border-color: var(--medical-primary);
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: var(--medical-hover);
+  border-color: var(--medical-hover);
+}
+
+:deep(.el-tag--success) {
+  background-color: rgba(0, 150, 57, 0.1);
+  border-color: rgba(0, 150, 57, 0.2);
+  color: #009639;
+}
+
+:deep(.el-tag--danger) {
+  background-color: rgba(218, 41, 28, 0.1);
+  border-color: rgba(218, 41, 28, 0.2);
+  color: #DA291C;
 }
 </style>

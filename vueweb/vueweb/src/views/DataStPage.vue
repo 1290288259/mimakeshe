@@ -4,7 +4,7 @@
     <DataStHead />
     <!-- 主体内容为子路由出口 -->
     <el-container style="height: 100%; display: flex; flex-direction: column;">
-      <el-main style="background-color: #f4f6f9; padding: 20px; flex: 1;">
+      <el-main style="background-color: var(--medical-bg); padding: 20px; flex: 1;">
         <router-view></router-view>
       </el-main>
     </el-container>
@@ -26,18 +26,5 @@ export default {
 <style scoped>
 .data-st-page {
   padding: 20px;
-}
-.nav-btns {
-  margin-bottom: 20px;
-}
-.nav-link {
-  margin-right: 20px;
-  color: #409EFF;
-  text-decoration: none;
-  font-size: 18px;
-}
-.nav-link.router-link-exact-active {
-  font-weight: bold;
-  text-decoration: underline;
 }
 </style>

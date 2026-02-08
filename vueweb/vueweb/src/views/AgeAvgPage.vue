@@ -1,74 +1,86 @@
 <template>
-  <!-- 外层容器，设置样式 -->
-  <div class="data-container">
-    <!-- 标题 -->
-    <h2 class="center-title">年龄段数据分析</h2>
+  <div class="data-page-container">
+    <el-card class="medical-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <div class="header-title">
+            <span class="dot warning"></span>
+            <h3>年龄段指标趋势</h3>
+          </div>
+          <div class="header-meta" v-if="latestDataTimestamp">
+            <el-tag type="info" size="small" effect="plain">
+              <el-icon><Clock /></el-icon> 数据时间：{{ latestDataTimestamp }}
+            </el-tag>
+          </div>
+        </div>
+      </template>
 
-    <!-- 字段选择按钮组 -->
-    <div class="button-group">
-      <el-button
-        v-for="(name, field) in fieldNames"
-        :key="field"
-        :type="currentField === field ? 'primary' : 'default'"
-        @click="changeField(field)"
-        :loading="isLoading && currentField === field"
-      >
-        {{ name }}
-      </el-button>
-    </div>
+      <!-- 操作区 -->
+      <div class="operation-bar">
+        <div class="left-ops">
+          <span class="label-text">密钥组选择：</span>
+          <el-select v-model="selectedKeyIndex" placeholder="请选择密钥组" class="key-select" @change="handleKeyChange">
+            <el-option
+              v-for="item in keypairNames"
+              :key="item.id"
+              :label="item.hospital_name"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </div>
+        <div class="right-ops">
+          <el-button 
+            type="warning" 
+            :loading="isCalculating" 
+            @click="calculateLatestAvg"
+            icon="TrendCharts"
+            round
+            plain
+          >
+            {{ isCalculating ? '计算中...' : '计算最新趋势' }}
+          </el-button>
+        </div>
+      </div>
 
-    <!-- 操作栏：密钥组选择和计算按钮 -->
-    <div class="operation-bar">
-      <el-select v-model="selectedKeyIndex" placeholder="选择密钥组" style="width: 200px; margin-right: 20px;" @change="handleKeyChange">
-        <el-option
-          v-for="item in keypairNames"
-          :key="item.id"
-          :label="item.hospital_name"
-          :value="item.id">
-        </el-option>
-      </el-select>
+      <!-- 指标切换 -->
+      <div class="field-tabs">
+        <el-radio-group v-model="currentField" @change="changeField" size="large">
+          <el-radio-button 
+            v-for="(name, field) in fieldNames"
+            :key="field"
+            :label="field"
+          >
+            {{ name }}
+          </el-radio-button>
+        </el-radio-group>
+      </div>
 
-      <el-button
-        type="success"
-        @click="calculateLatestAvg"
-        :loading="isCalculating"
-      >
-        计算最新平均值
-      </el-button>
-    </div>
-
-    <!-- 显示数据时间信息 -->
-    <div v-if="latestDataTimestamp" class="timestamp-display">
-      数据更新时间: {{ latestDataTimestamp }}
-    </div>
-
-    <!-- 折线图容器 -->
-    <div ref="chartRef" class="chart-box"></div>
+      <!-- 图表容器 -->
+      <div class="chart-container" v-loading="isLoading">
+        <div ref="chartRef" class="chart-box"></div>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script>
-// 引入axios用于发送HTTP请求
 import axios from 'axios';
-// 引入element-plus的消息提示组件
 import { ElMessage } from 'element-plus';
-// 引入echarts，确保在main.js中已全局注册或在此处按需引入
-// import * as echarts from 'echarts'; // 如果未全局注册，需要在此处引入
+import { Clock, TrendCharts } from '@element-plus/icons-vue';
 
 export default {
+  name: 'AgeAvgPage',
+  components: {
+    Clock,
+    TrendCharts
+  },
   data() {
     return {
-      // 当前选中的字段
       currentField: 'cholesterol',
-      // 是否正在加载数据（从数据库获取）
       isLoading: false,
-      // 是否正在计算最新平均值
       isCalculating: false,
-      // 存储从后端获取的数据
       chartData: {},
-      // 最新数据的时间戳
       latestDataTimestamp: null,
-      // 字段名称映射（英文到中文）
       fieldNames: {
         cholesterol: '胆固醇',
         triglyceride: '甘油三酯',
@@ -79,88 +91,62 @@ export default {
         AST: '谷草转氨酶',
         glucose: '血糖'
       },
-      // echarts实例
       chartInstance: null,
-      // 密钥组列表
       keypairNames: [],
-      // 当前选中的密钥组索引
       selectedKeyIndex: null
     };
   },
-  // 组件创建时自动获取默认字段的数据
   created() {
     this.fetchKeypairNames();
   },
-  // 组件挂载后初始化echarts实例
   mounted() {
     this.initChart();
+    window.addEventListener('resize', this.handleResize);
   },
-  // 组件销毁前清理echarts实例
   beforeUnmount() {
     if (this.chartInstance) {
       this.chartInstance.dispose();
       this.chartInstance = null;
     }
-    // 移除窗口大小变化的监听器
     window.removeEventListener('resize', this.handleResize);
   },
   methods: {
-    // 获取密钥组列表
+    handleResize() {
+      if (this.chartInstance) {
+        this.chartInstance.resize();
+      }
+    },
     async fetchKeypairNames() {
       try {
         const res = await axios.get('/get_keypair_names');
         if (res.data.code === 200) {
           this.keypairNames = res.data.data;
-          // 默认选中第一个
           if (this.keypairNames.length > 0) {
             this.selectedKeyIndex = this.keypairNames[0].id;
-            this.fetchData(this.currentField); // 选中后再获取数据
+            this.fetchData(this.currentField);
           }
         }
       } catch (error) {
         ElMessage.error('获取密钥列表失败');
       }
     },
-
-    // 处理密钥切换
     handleKeyChange() {
       this.fetchData(this.currentField);
     },
-
-    // 初始化echarts实例
     initChart() {
-      // 获取echarts实例（已在main.js全局挂载）
-      // 如果未全局挂载，请使用: this.chartInstance = echarts.init(this.$refs.chartRef);
       this.chartInstance = this.$echarts.init(this.$refs.chartRef);
-
-      // 添加窗口大小变化的监听，自动调整图表大小
-      window.addEventListener('resize', this.handleResize);
     },
-
-    // 处理窗口大小变化
-    handleResize() {
-      if (this.chartInstance) {
-        this.chartInstance.resize();
-      }
-    },
-
-    // 切换字段
     changeField(field) {
       if (this.currentField !== field) {
         this.currentField = field;
-        // 切换字段时，从数据库获取数据
         this.fetchData(field);
       }
     },
-
-    // 从后端获取数据 (从数据库获取)
     async fetchData(fieldName) {
       if (!this.selectedKeyIndex) return;
-
       this.isLoading = true;
 
       try {
-        // 发送GET请求到后端获取数据库中存储的平均值数据
         const res = await axios.get('/data/get_age_group_avg_from_db', {
           params: {
             field_name: fieldName,
@@ -168,35 +154,25 @@ export default {
           }
         });
 
-        // 判断后端返回的状态码
         if (res.data.code === 200) {
-          // 从后端返回的data中分离出created_at和年龄段平均值
           const { created_at, ...averages } = res.data.data;
-          this.chartData = averages; // 保存年龄段平均值数据
-          this.latestDataTimestamp = created_at; // 保存时间戳
-          // 渲染图表
+          this.chartData = averages;
+          this.latestDataTimestamp = created_at;
           this.renderChart();
-          ElMessage.success('成功获取数据');
         } else if (res.data.code === 404) {
-           // 如果未找到数据，清空图表并提示
            this.chartData = {};
-           this.latestDataTimestamp = null; // 清空时间戳
-           this.renderChart(); // 渲染空图表
+           this.latestDataTimestamp = null;
+           this.renderChart();
            ElMessage.warning('未找到该字段的年龄段平均值数据，请先计算');
         } else {
-          // 如果后端返回其他错误，弹出错误提示
           ElMessage.error('获取数据失败: ' + res.data.msg);
         }
       } catch (error) {
-        // 如果请求异常，弹出错误提示
         ElMessage.error('获取数据失败: ' + error.message);
       } finally {
-        // 无论成功失败，都将加载状态设为false
         this.isLoading = false;
       }
     },
-
-    // 计算最新平均值并存储到数据库
     async calculateLatestAvg() {
       if (!this.selectedKeyIndex) {
         ElMessage.warning('请先选择密钥组');
@@ -204,56 +180,40 @@ export default {
       }
 
       this.isCalculating = true;
-      ElMessage.info('正在计算最新平均值...');
-
       try {
-        // 发送GET请求到后端触发计算和存储操作
         const res = await axios.get('/data/calculate_and_store_age_group_avg', {
            params: {
-            field_name: this.currentField, // 传递当前选中的字段
+            field_name: this.currentField,
             group_id: this.selectedKeyIndex
           }
         });
 
-        // 判断后端返回的状态码
-        if (res.data.code === 200) { // 假设后端计算成功返回200
+        if (res.data.code === 200) {
           ElMessage.success('最新平均值计算并存储成功！');
-          // 计算成功后，重新从数据库获取最新数据并更新图表
           this.fetchData(this.currentField);
         } else {
-          // 如果后端返回错误，弹出错误提示
           ElMessage.error('计算最新平均值失败: ' + res.data.msg);
         }
       } catch (error) {
-        // 如果请求异常，弹出错误提示
         ElMessage.error('计算最新平均值失败: ' + error.message);
       } finally {
-        // 无论成功失败，都将计算状态设为false
         this.isCalculating = false;
       }
     },
-
-    // 渲染折线图
     renderChart() {
       if (!this.chartInstance) {
         this.initChart();
       }
 
-      // 准备x轴数据（年龄段）
       const xData = Object.keys(this.chartData);
-
-      // 准备y轴数据（平均值）
       const yData = xData.map(key => this.chartData[key]);
 
-      // 配置echarts的option
       const option = {
         title: {
-          text: `各年龄段${this.fieldNames[this.currentField]}平均值`,
-          left: 'center'
+          show: false
         },
         tooltip: {
           trigger: 'axis',
-          // 格式化tooltip显示，处理可能为null的值
           formatter: function(params) {
              const param = params[0];
              return param.name + ': ' + (param.value !== null ? Number(param.value).toFixed(2) : 'N/A');
@@ -263,25 +223,22 @@ export default {
           type: 'category',
           data: xData,
           name: '年龄段',
-          nameLocation: 'middle',
-          nameGap: 30,
-          axisLabel: {
-            interval: 0  // 强制显示所有标签
-          }
+          nameLocation: 'end',
+          nameGap: 10,
+          axisLine: { lineStyle: { color: '#ccc' } },
+          axisLabel: { color: '#606266', interval: 0 }
         },
         yAxis: {
           type: 'value',
           name: '平均值',
-          nameLocation: 'middle',
-          nameGap: 40,
-           // 确保y轴从0开始，避免数据波动看起来过大
+          splitLine: { lineStyle: { type: 'dashed', color: '#eee' } },
           min: 0
         },
         grid: {
-          left: '5%',
+          left: '3%',
           right: '5%',
-          bottom: '10%',
-          top: '15%',
+          bottom: '5%',
+          top: '10%',
           containLabel: true
         },
         series: [
@@ -289,47 +246,36 @@ export default {
             name: this.fieldNames[this.currentField],
             type: 'line',
             data: yData,
-            smooth: true,  // 平滑曲线
+            smooth: true,
             lineStyle: {
-              width: 3  // 线条粗细
+              width: 3,
+              color: '#FFB81C' // Medical Warning Color (Amber) for trend
             },
             itemStyle: {
-              color: '#409EFF'  // 数据点颜色
+              color: '#FFB81C',
+              borderWidth: 2,
+              borderColor: '#fff'
             },
-            // 在数据点显示数值
             label: {
               show: true,
               position: 'top',
-              formatter: function(params) {
-                // 保留两位小数，处理可能为null的值
-                return params.value !== null ? Number(params.value).toFixed(2) : 'N/A';
-              }
+              formatter: (params) => params.value !== null ? Number(params.value).toFixed(2) : 'N/A',
+              color: '#FFB81C',
+              fontWeight: 'bold'
             },
-            // 区域填充
             areaStyle: {
-              color: { // 渐变色
+              color: {
                 type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
+                x: 0, y: 0, x2: 0, y2: 1,
                 colorStops: [
-                  {
-                    offset: 0,
-                    color: 'rgba(64, 158, 255, 0.5)'  // 渐变起始颜色
-                  },
-                  {
-                    offset: 1,
-                    color: 'rgba(64, 158, 255, 0.1)'  // 渐变结束颜色
-                  }
+                  { offset: 0, color: 'rgba(255, 184, 28, 0.4)' },
+                  { offset: 1, color: 'rgba(255, 184, 28, 0.05)' }
                 ]
               }
             }
           }
         ]
       };
-
-      // 设置option并渲染
       this.chartInstance.setOption(option);
     }
   }
@@ -337,48 +283,99 @@ export default {
 </script>
 
 <style scoped>
-/* 外层容器样式，居中并设置最大宽度 */
-.data-container {
-  padding: 20px;
-  max-width: 1600px;
-  margin: 0 auto;
+.data-page-container {
+  max-width: 100%;
 }
 
-/* 居中标题样式 */
-.center-title {
-  text-align: center;
-  margin-bottom: 20px;
+.medical-card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: var(--medical-card-shadow);
 }
 
-/* 按钮组样式 */
-.button-group {
+.card-header {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px; /* 调整间距 */
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* 数据时间显示样式 */
-.timestamp-display {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 0.9em;
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 6px;
+  height: 24px;
+  border-radius: 3px;
+}
+
+.dot.warning {
+  background-color: var(--medical-warning);
+}
+
+.header-title h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--medical-text);
+  font-weight: 600;
+}
+
+.operation-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.left-ops {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.label-text {
+  font-size: 14px;
   color: #606266;
 }
 
-/* 操作栏样式 */
-.operation-bar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 30px;
+.key-select {
+  width: 240px;
 }
 
-/* 折线图容器样式 */
+.field-tabs {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.chart-container {
+  padding: 20px 0;
+  background-color: #fcfcfc;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
 .chart-box {
   width: 100%;
   height: 500px;
-  margin: 0 auto;
+}
+
+/* Customize Radio Buttons to match theme */
+:deep(.el-radio-button__inner) {
+  border-radius: 4px !important;
+  margin: 0 4px;
+  border: 1px solid #dcdfe6;
+  box-shadow: none !important;
+}
+
+:deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background-color: var(--medical-warning);
+  border-color: var(--medical-warning);
+  color: #fff;
 }
 </style>

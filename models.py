@@ -102,18 +102,18 @@ class Shuju(db.Model):
     __tablename__ = 'shuju'
 
     id = db.Column(db.Integer, primary_key=True)
-    cirrhosis = db.Column(db.Float, nullable=False)
+    cirrhosis = db.Column(db.DECIMAL(10, 4), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     sex = db.Column(db.Integer, nullable=False)
-    cholesterol = db.Column(db.Float, nullable=False)
-    triglyceride = db.Column(db.Float, nullable=False)
-    HDL = db.Column(db.Float, nullable=False)
-    LDL = db.Column(db.Float, nullable=False)
+    cholesterol = db.Column(db.DECIMAL(10, 4), nullable=False)
+    triglyceride = db.Column(db.DECIMAL(10, 4), nullable=False)
+    HDL = db.Column(db.DECIMAL(10, 4), nullable=False)
+    LDL = db.Column(db.DECIMAL(10, 4), nullable=False)
     PathDiagNum = db.Column(db.Integer, nullable=False)
-    BMI = db.Column(db.Float, nullable=False)
-    ALT = db.Column(db.Float, nullable=False)
-    AST = db.Column(db.Float, nullable=False)
-    glucose = db.Column(db.Float, nullable=False)
+    BMI = db.Column(db.DECIMAL(10, 4), nullable=False)
+    ALT = db.Column(db.DECIMAL(10, 4), nullable=False)
+    AST = db.Column(db.DECIMAL(10, 4), nullable=False)
+    glucose = db.Column(db.DECIMAL(10, 4), nullable=False)
     group_id = db.Column(db.Integer, default=1, nullable=False)  # 新增分组字段，默认为1
 
     def __repr__(self):
@@ -200,15 +200,15 @@ class Avg(db.Model):
     __tablename__ = 'avg'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # 主键，自增
-    age = db.Column(db.Float)            # 年龄字段平均值
-    cholesterol = db.Column(db.Float)    # 胆固醇字段平均值
-    triglyceride = db.Column(db.Float)   # 甘油三酯字段平均值
-    HDL = db.Column(db.Float)            # 高密度脂蛋白字段平均值
-    LDL = db.Column(db.Float)            # 低密度脂蛋白字段平均值
-    BMI = db.Column(db.Float)            # 体重指数字段平均值
-    ALT = db.Column(db.Float)            # 谷丙转氨酶字段平均值
-    AST = db.Column(db.Float)            # 谷草转氨酶字段平均值
-    glucose = db.Column(db.Float)        # 血糖字段平均值
+    age = db.Column(db.DECIMAL(10, 4))            # 年龄字段平均值
+    cholesterol = db.Column(db.DECIMAL(10, 4))    # 胆固醇字段平均值
+    triglyceride = db.Column(db.DECIMAL(10, 4))   # 甘油三酯字段平均值
+    HDL = db.Column(db.DECIMAL(10, 4))            # 高密度脂蛋白字段平均值
+    LDL = db.Column(db.DECIMAL(10, 4))            # 低密度脂蛋白字段平均值
+    BMI = db.Column(db.DECIMAL(10, 4))            # 体重指数字段平均值
+    ALT = db.Column(db.DECIMAL(10, 4))            # 谷丙转氨酶字段平均值
+    AST = db.Column(db.DECIMAL(10, 4))            # 谷草转氨酶字段平均值
+    glucose = db.Column(db.DECIMAL(10, 4))        # 血糖字段平均值
     group_id = db.Column(db.Integer, default=1) # 新增 group_id 字段，默认值为 1
    # 强制存储北京时间（UTC+8）
     created_at = db.Column(
@@ -244,18 +244,18 @@ class Analysis_result(db.Model):
     __tablename__ = 'analysis_result'  # 指定表名
     
     id = db.Column(db.Integer, primary_key=True)  # 主键
-    cirrhosis = db.Column(db.Float)      # 肝硬化，浮点型
-    age = db.Column(db.Float)            # 年龄，浮点型
-    sex = db.Column(db.Float)            # 性别，浮点型
-    cholesterol = db.Column(db.Float)    # 胆固醇，浮点型
-    triglyceride = db.Column(db.Float)   # 甘油三酯，浮点型
-    HDL = db.Column(db.Float)            # 高密度脂蛋白，浮点型
-    LDL = db.Column(db.Float)            # 低密度脂蛋白，浮点型
-    PathDiagNum = db.Column(db.Float)    # 病理诊断编号，浮点型
-    BMI = db.Column(db.Float)            # 体重指数，浮点型
-    ALT = db.Column(db.Float)            # 谷丙转氨酶，浮点型
-    AST = db.Column(db.Float)            # 谷草转氨酶，浮点型
-    glucose = db.Column(db.Float)        # 血糖，浮点型
+    cirrhosis = db.Column(db.DECIMAL(10, 4))      # 肝硬化，浮点型
+    age = db.Column(db.DECIMAL(10, 4))            # 年龄，浮点型
+    sex = db.Column(db.DECIMAL(10, 4))            # 性别，浮点型
+    cholesterol = db.Column(db.DECIMAL(10, 4))    # 胆固醇，浮点型
+    triglyceride = db.Column(db.DECIMAL(10, 4))   # 甘油三酯，浮点型
+    HDL = db.Column(db.DECIMAL(10, 4))            # 高密度脂蛋白，浮点型
+    LDL = db.Column(db.DECIMAL(10, 4))            # 低密度脂蛋白，浮点型
+    PathDiagNum = db.Column(db.DECIMAL(10, 4))    # 病理诊断编号，浮点型
+    BMI = db.Column(db.DECIMAL(10, 4))            # 体重指数，浮点型
+    ALT = db.Column(db.DECIMAL(10, 4))            # 谷丙转氨酶，浮点型
+    AST = db.Column(db.DECIMAL(10, 4))            # 谷草转氨酶，浮点型
+    glucose = db.Column(db.DECIMAL(10, 4))        # 血糖，浮点型
     # 强制存储北京时间（UTC+8）
     created_at = db.Column(
         db.DateTime,
@@ -272,15 +272,15 @@ class AgeGroupAvg(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True) # 主键，自动递增
     field_name = db.Column(db.String(50), nullable=False) # 字段名称，非空，移除唯一约束以支持多组
-    age_0_9 = db.Column(db.Float)    # 0-9岁年龄段平均值
-    age_10_19 = db.Column(db.Float)  # 10-19岁年龄段平均值
-    age_20_29 = db.Column(db.Float)  # 20-29岁年龄段平均值
-    age_30_39 = db.Column(db.Float)  # 30-39岁年龄段平均值
-    age_40_49 = db.Column(db.Float)  # 40-49岁年龄段平均值
-    age_50_59 = db.Column(db.Float)  # 50-59岁年龄段平均值
-    age_60_69 = db.Column(db.Float)  # 60-69岁年龄段平均值
-    age_70_79 = db.Column(db.Float)  # 70-79岁年龄段平均值
-    age_80_plus = db.Column(db.Float) # 80岁及以上年龄段平均值
+    age_0_9 = db.Column(db.DECIMAL(10, 4))    # 0-9岁年龄段平均值
+    age_10_19 = db.Column(db.DECIMAL(10, 4))  # 10-19岁年龄段平均值
+    age_20_29 = db.Column(db.DECIMAL(10, 4))  # 20-29岁年龄段平均值
+    age_30_39 = db.Column(db.DECIMAL(10, 4))  # 30-39岁年龄段平均值
+    age_40_49 = db.Column(db.DECIMAL(10, 4))  # 40-49岁年龄段平均值
+    age_50_59 = db.Column(db.DECIMAL(10, 4))  # 50-59岁年龄段平均值
+    age_60_69 = db.Column(db.DECIMAL(10, 4))  # 60-69岁年龄段平均值
+    age_70_79 = db.Column(db.DECIMAL(10, 4))  # 70-79岁年龄段平均值
+    age_80_plus = db.Column(db.DECIMAL(10, 4)) # 80岁及以上年龄段平均值
     group_id = db.Column(db.Integer, default=1) # 新增 group_id 字段，默认值为 1
     # 强制存储北京时间（UTC+8）
     created_at = db.Column(
